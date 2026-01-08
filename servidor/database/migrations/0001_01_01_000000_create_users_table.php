@@ -16,9 +16,10 @@ return new class extends Migration
             $table->string('name', 100);
             $table->string('email', 100)->unique();
             $table->string('password', 255);
-            $table->enum('role', ['user', 'trainer'])->default('user');
+            // SQLite no soporta ENUM bien, usar string con constraint
+            $table->string('role', 20)->default('user');
             // SQLite no soporta default(now()) para date, lo manejamos en el código
-            $table->date('registerDate')->nullable();
+            $table->string('registerDate', 10)->nullable(); // Formato YYYY-MM-DD
             $table->float('height')->nullable();
             $table->float('weight')->nullable();
             $table->string('profilePhoto', 255)->nullable();

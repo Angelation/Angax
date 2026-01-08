@@ -41,18 +41,21 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         try {
-            $request->validate([
+            $validated = $request->validate([
                 'name' => 'required|string|max:100',
                 'email' => 'required|string|email|max:100|unique:users',
                 'password' => 'required|string|min:6|confirmed',
                 'role' => 'required|in:user,trainer',
             ]);
 
+            // Asegurarse de que el role sea válido
+            $role = in_array($request->role, ['user', 'trainer']) ? $request->role : 'user';
+
             $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-                'role' => $request->role,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $role,
                 'registerDate' => now()->format('Y-m-d'),
                 'isActive' => true,
             ]);
