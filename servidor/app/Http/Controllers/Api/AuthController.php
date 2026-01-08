@@ -12,6 +12,32 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    /**
+     * Agregar headers CORS a la respuesta
+     */
+    private function addCorsHeaders($response, Request $request)
+    {
+        $origin = $request->headers->get('Origin');
+        $allowedOrigin = 'https://angax-frontend.onrender.com';
+        
+        if ($origin) {
+            if (in_array($origin, [
+                'http://localhost:5173',
+                'http://localhost:3000',
+                'http://127.0.0.1:3000',
+                'https://angax-frontend.onrender.com',
+                'http://angax-frontend.onrender.com',
+            ])) {
+                $allowedOrigin = $origin;
+            } elseif (str_contains($origin, 'onrender.com')) {
+                $allowedOrigin = $origin;
+            }
+        }
+        
+        $response->headers->set('Access-Control-Allow-Origin', $allowedOrigin);
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
+    }
+    
     public function register(Request $request)
     {
         try {
@@ -42,21 +68,31 @@ class AuthController extends Controller
                 'message' => 'Usuario registrado exitosamente',
             ], 201);
         } catch (ValidationException $e) {
-            return response()->json([
+            $response = response()->json([
                 'message' => 'Error de validación',
                 'errors' => $e->errors()
             ], 422);
+            
+            // Agregar headers CORS manualmente si es necesario
+            $this->addCorsHeaders($response, $request);
+            return $response;
         } catch (\Exception $e) {
             Log::error('Error al registrar usuario', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'request' => $request->all()
             ]);
             
-            return response()->json([
+            $response = response()->json([
                 'message' => 'Error al registrar usuario: ' . $e->getMessage(),
                 'error' => $e->getMessage()
             ], 500);
+            
+            // Agregar headers CORS manualmente si es necesario
+            $this->addCorsHeaders($response, $request);
+            return $response;
         }
     }
 

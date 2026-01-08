@@ -19,11 +19,43 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (PostTooLargeException $e, Request $request) {
             if ($request->is('api/*') || $request->expectsJson()) {
-                return response()->json([
+                $response = response()->json([
                     'message' => 'La imagen/archivo es demasiado grande para el límite actual del servidor.',
                 ], 413);
+                
+                // Agregar headers CORS a la respuesta de error
+                $origin = $request->headers->get('Origin');
+                $allowedOrigin = $origin && str_contains($origin, 'onrender.com') 
+                    ? $origin 
+                    : ($origin ?: 'https://angax-frontend.onrender.com');
+                $response->headers->set('Access-Control-Allow-Origin', $allowedOrigin);
+                $response->headers->set('Access-Control-Allow-Credentials', 'true');
+                
+                return $response;
             }
 
+            return null;
+        });
+        
+        // Manejar excepciones generales para agregar CORS
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if ($request->is('api/*')) {
+                $response = response()->json([
+                    'message' => 'Error interno del servidor',
+                    'error' => config('app.debug') ? $e->getMessage() : 'Ha ocurrido un error'
+                ], 500);
+                
+                // Agregar headers CORS a la respuesta de error
+                $origin = $request->headers->get('Origin');
+                $allowedOrigin = $origin && str_contains($origin, 'onrender.com') 
+                    ? $origin 
+                    : ($origin ?: 'https://angax-frontend.onrender.com');
+                $response->headers->set('Access-Control-Allow-Origin', $allowedOrigin);
+                $response->headers->set('Access-Control-Allow-Credentials', 'true');
+                
+                return $response;
+            }
+            
             return null;
         });
     })->create();
