@@ -17,9 +17,9 @@ return new class extends Migration
                 $table->enum('role', ['user', 'trainer'])->default('user')->after('password');
             }
             
-            // Agregar registerDate si no existe
+            // Agregar registerDate si no existe (SQLite no soporta default(now()))
             if (!Schema::hasColumn('users', 'registerDate')) {
-                $table->date('registerDate')->default(now())->after('role');
+                $table->date('registerDate')->nullable()->after('role');
             }
             
             // Agregar height si no existe

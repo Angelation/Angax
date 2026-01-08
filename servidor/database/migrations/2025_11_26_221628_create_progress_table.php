@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('progress', function (Blueprint $table) {
             $table->id('progressID');
             $table->unsignedBigInteger('userID')->index();
-            $table->date('date')->default(now());
+            // SQLite no soporta default(now()) para date, lo manejamos en el código
+            $table->date('date')->nullable();
             $table->float('bodyWeight')->nullable();
             $table->float('bodyFat')->nullable();
             $table->text('notes')->nullable();

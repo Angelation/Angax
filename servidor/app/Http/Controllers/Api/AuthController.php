@@ -48,21 +48,14 @@ class AuthController extends Controller
                 'role' => 'required|in:user,trainer',
             ]);
 
-            // Preparar los datos para crear el usuario
-            $userData = [
+            $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
+                'registerDate' => now()->format('Y-m-d'),
                 'isActive' => true,
-            ];
-            
-            // Agregar registerDate solo si no se proporciona
-            if (!$request->has('registerDate')) {
-                $userData['registerDate'] = now();
-            }
-            
-            $user = User::create($userData);
+            ]);
 
             return response()->json([
                 'user' => [
@@ -92,13 +85,8 @@ class AuthController extends Controller
                 'request' => $request->except(['password', 'password_confirmation'])
             ]);
             
-            // En producción, no exponer el mensaje de error completo por seguridad
-            $errorMessage = config('app.debug') 
-                ? $e->getMessage() 
-                : 'Error al registrar usuario. Por favor, verifica los datos e intenta nuevamente.';
-            
             $response = response()->json([
-                'message' => $errorMessage,
+                'message' => 'Error al registrar usuario: ' . $e->getMessage(),
                 'error' => config('app.debug') ? [
                     'message' => $e->getMessage(),
                     'file' => $e->getFile(),

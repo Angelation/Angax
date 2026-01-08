@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('email', 100)->unique();
             $table->string('password', 255);
             $table->enum('role', ['user', 'trainer'])->default('user');
-            $table->date('registerDate')->default(now());
+            // SQLite no soporta default(now()) para date, lo manejamos en el código
+            $table->date('registerDate')->nullable();
             $table->float('height')->nullable();
             $table->float('weight')->nullable();
             $table->string('profilePhoto', 255)->nullable();

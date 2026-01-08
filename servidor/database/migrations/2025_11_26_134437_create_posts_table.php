@@ -21,7 +21,8 @@ return new class extends Migration
             $table->id('postID');
             $table->unsignedBigInteger('userID')->index();
             $table->text('content');
-            $table->dateTime('postDate')->default(now());
+            // SQLite no soporta default(now()) para dateTime, lo manejamos en el código
+            $table->dateTime('postDate')->nullable();
             $table->string('image', 255)->nullable();
             $table->boolean('isActive')->default(true);
             $table->timestamps();

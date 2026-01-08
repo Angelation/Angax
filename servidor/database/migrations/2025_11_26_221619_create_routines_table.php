@@ -16,7 +16,8 @@ return new class extends Migration
             $table->unsignedBigInteger('userID')->index();
             $table->string('routineName', 100);
             $table->string('goal', 255)->nullable();
-            $table->date('creationDate')->default(now());
+            // SQLite no soporta default(now()) para date, lo manejamos en el código
+            $table->date('creationDate')->nullable();
             $table->boolean('isActive')->default(true);
             $table->timestamps();
             
