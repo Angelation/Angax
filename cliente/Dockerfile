@@ -3,9 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Argumento para la URL de la API
-ARG VITE_API_BASE_URL=http://localhost:8000/api
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+# Argumento para la URL de la API (debe ser pasado en build-time)
+# Si no se proporciona, usar un valor por defecto
+ARG VITE_API_BASE_URL=https://angax-backend.onrender.com/api
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 # Copiar archivos de dependencias
 COPY package*.json ./

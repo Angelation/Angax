@@ -32,11 +32,8 @@ services:
     dockerfilePath: ./cliente/Dockerfile
     dockerContext: ./cliente
     plan: free
+    buildCommand: echo "Building frontend..."
     envVars:
       - key: VITE_API_BASE_URL
-        fromService:
-          type: web
-          name: angax-backend
-          property: host
-          transform: https://$(host)/api
+        value: https://angax-backend.onrender.com/api
     numInstances: 1
