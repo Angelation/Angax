@@ -48,14 +48,21 @@ class AuthController extends Controller
                 'role' => 'required|in:user,trainer',
             ]);
 
-            $user = User::create([
+            // Preparar los datos para crear el usuario
+            $userData = [
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'role' => $request->role,
-                'registerDate' => now(),
                 'isActive' => true,
-            ]);
+            ];
+            
+            // Agregar registerDate solo si no se proporciona
+            if (!$request->has('registerDate')) {
+                $userData['registerDate'] = now();
+            }
+            
+            $user = User::create($userData);
 
             return response()->json([
                 'user' => [
@@ -82,12 +89,21 @@ class AuthController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'request' => $request->all()
+                'request' => $request->except(['password', 'password_confirmation'])
             ]);
             
+            // En producción, no exponer el mensaje de error completo por seguridad
+            $errorMessage = config('app.debug') 
+                ? $e->getMessage() 
+                : 'Error al registrar usuario. Por favor, verifica los datos e intenta nuevamente.';
+            
             $response = response()->json([
-                'message' => 'Error al registrar usuario: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'message' => $errorMessage,
+                'error' => config('app.debug') ? [
+                    'message' => $e->getMessage(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ] : 'Error interno del servidor'
             ], 500);
             
             // Agregar headers CORS manualmente si es necesario

@@ -63,7 +63,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            // No usar 'hashed' cast aquí, ya que usamos Hash::make() manualmente en el controlador
             'registerDate' => 'date',
             'height' => 'float',
             'weight' => 'float',
