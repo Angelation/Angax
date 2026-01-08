@@ -56,23 +56,27 @@ class AuthController extends Controller
             $registerDate = date('Y-m-d');
 
             // Usar DB::insert directamente para evitar problemas con Eloquent
-            \DB::beginTransaction();
+            DB::beginTransaction();
             try {
-                $userID = \DB::table('users')->insertGetId([
+                $userID = DB::table('users')->insertGetId([
                     'name' => $validated['name'],
                     'email' => $validated['email'],
                     'password' => Hash::make($validated['password']),
                     'role' => $role,
                     'registerDate' => $registerDate,
-                    'isActive' => true,
+                    'isActive' => 1, // Usar 1 en lugar de true para SQLite
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
                 
-                \DB::commit();
+                DB::commit();
                 
                 // Obtener el usuario creado
                 $user = User::find($userID);
+                
+                if (!$user) {
+                    throw new \Exception('Usuario creado pero no se pudo recuperar de la base de datos');
+                }
 
                 return response()->json([
                     'user' => [
@@ -85,7 +89,7 @@ class AuthController extends Controller
                     'message' => 'Usuario registrado exitosamente',
                 ], 201);
             } catch (\Exception $e) {
-                \DB::rollBack();
+                DB::rollBack();
                 throw $e;
             }
         } catch (ValidationException $e) {
