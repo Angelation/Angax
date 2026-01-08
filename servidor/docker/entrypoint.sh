@@ -153,7 +153,12 @@ php artisan route:list || true
 # Optimizar Laravel (solo en producción)
 if [ "$APP_ENV" = "production" ]; then
     echo "Optimizando Laravel..."
-    php artisan config:cache || true
+    # Para SQLite, NO cachear config para evitar problemas con la ruta de la base de datos
+    if [ "$DB_CONNECTION" != "sqlite" ]; then
+      php artisan config:cache || true
+    else
+      echo "Saltando cache de configuración para SQLite (evitar problemas de ruta)"
+    fi
     # NO cachear rutas en producción si hay problemas, mejor sin cache
     # php artisan route:cache || true
     php artisan view:cache || true
