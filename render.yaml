@@ -32,7 +32,6 @@ services:
     dockerfilePath: ./cliente/Dockerfile
     dockerContext: ./cliente
     plan: free
-    buildCommand: echo "Building frontend..."
     envVars:
       - key: VITE_API_BASE_URL
         value: https://angax-backend.onrender.com/api
