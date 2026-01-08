@@ -5,7 +5,7 @@ services:
     env: docker
     dockerfilePath: ./servidor/Dockerfile
     dockerContext: ./servidor
-    plan: starter
+    plan: free
     envVars:
       - key: APP_NAME
         value: AngaX
@@ -31,7 +31,7 @@ services:
     env: docker
     dockerfilePath: ./cliente/Dockerfile
     dockerContext: ./cliente
-    plan: starter
+    plan: free
     envVars:
       - key: VITE_API_BASE_URL
         fromService:
