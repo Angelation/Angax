@@ -314,11 +314,12 @@ const replaceEmojisWithIcons = (text) => {
     '👥': 'groups',
     '📋': 'list',
     '📈': 'trending_up',
+    '💬': 'forum',
   }
   
   let result = []
   let lastIndex = 0
-  const emojiRegex = /👋|💪|📊|📝|✅|🚀|💡|🤔|👉|👥|📋|📈/g
+  const emojiRegex = /👋|💪|📊|📝|✅|🚀|💡|🤔|👉|👥|📋|📈|💬/g
   let match
   
   while ((match = emojiRegex.exec(text)) !== null) {
@@ -1161,7 +1162,7 @@ function App() {
       </div>
 
       <button className="chatbot-toggle" onClick={toggleChat}>
-        <span>💬</span>
+        <span className="material-icons">forum</span>
         <small>Habla con Angel</small>
       </button>
 
@@ -1813,7 +1814,7 @@ function ProfilePage({ currentUser, userLoaded, ensureAuth, onProfileUpdate }) {
                   Guardar cambios
                 </button>
               </div>
-              {status && <p className="profile-status">{status}</p>}
+              {status && <p className="profile-status">{replaceEmojisWithIcons(status)}</p>}
             </form>
           </div>
         ) : (
@@ -2127,6 +2128,7 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
   const [showStudentRoutinesModal, setShowStudentRoutinesModal] = useState(false)
   const [studentRoutines, setStudentRoutines] = useState([])
   const [loadingStudentRoutines, setLoadingStudentRoutines] = useState(false)
+  const [pendingDeleteClient, setPendingDeleteClient] = useState(null)
 
   useEffect(() => {
     if (!userLoaded) return
@@ -2232,16 +2234,23 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
     }
   }
 
-  const handleRemoveClient = async (clientEmail) => {
-    if (!currentUser?.email) return
-    if (!confirm('¿Seguro que deseas eliminar este estudiante?')) return
+  const handleRemoveClient = (clientEmail) => {
+    setPendingDeleteClient(clientEmail)
+  }
+
+  const handleCloseDeleteClientModal = () => {
+    setPendingDeleteClient(null)
+  }
+
+  const confirmDeleteClient = async () => {
+    if (!currentUser?.email || !pendingDeleteClient) return
     try {
       const response = await fetch(`${apiBaseUrl}/trainer/remove-client`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           trainer_email: currentUser.email,
-          client_email: clientEmail,
+          client_email: pendingDeleteClient,
         }),
       })
       const data = await response.json()
@@ -2249,14 +2258,16 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
       setStatus('Estudiante eliminado exitosamente')
       setTimeout(() => setStatus(''), 3000)
       fetchClients()
-      if (selectedClient?.email === clientEmail) {
+      if (selectedClient?.email === pendingDeleteClient) {
         setSelectedClient(null)
         setShowCreateRoutine(false)
         setShowProgress(false)
       }
+      setPendingDeleteClient(null)
     } catch (error) {
       setStatus(error.message || 'Error al eliminar estudiante')
       setTimeout(() => setStatus(''), 3000)
+      setPendingDeleteClient(null)
     }
   }
 
@@ -3094,6 +3105,26 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
         </div>,
         document.body
       )}
+
+      {pendingDeleteClient &&
+        createPortal(
+          <div className="confirm-modal open" role="dialog" aria-modal="true" aria-label="Eliminar estudiante">
+            <div className="confirm-modal__backdrop" onClick={handleCloseDeleteClientModal} />
+            <div className="confirm-modal__content">
+              <h4>Eliminar estudiante</h4>
+              <p>¿Seguro que deseas eliminar este estudiante?</p>
+              <div className="confirm-modal__actions">
+                <button type="button" className="btn btn-outline" onClick={handleCloseDeleteClientModal}>
+                  Cancelar
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={confirmDeleteClient}>
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </section>
   )
 }
@@ -4365,7 +4396,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
                 >
                   Guardar rutina
                 </button>
-                {routineStatus && <p className="builder-hint">{routineStatus}</p>}
+                {routineStatus && <p className="builder-hint">{replaceEmojisWithIcons(routineStatus)}</p>}
               </div>
             </div>
           </div>
@@ -4382,7 +4413,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
             </header>
             {routines.length === 0 ? (
               <div className="routines-empty-state">
-                <div className="routines-empty-icon">💪</div>
+                <div className="routines-empty-icon"><span className="material-icons">fitness_center</span></div>
                 <h3>No tienes rutinas guardadas</h3>
                 <p>Crea tu primera rutina personalizada para comenzar a entrenar.</p>
               </div>
@@ -4526,7 +4557,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
                 })}
               </div>
             )}
-            {routineStatus && <p className="builder-hint">{routineStatus}</p>}
+            {routineStatus && <p className="builder-hint">{replaceEmojisWithIcons(routineStatus)}</p>}
             </div>
           </div>
         )}
@@ -4643,7 +4674,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
         </div>
 
         <div className="community__composer-actions" style={{ marginTop: 18 }}>
-          {routineStatus && <span className={`community__status ${routineStatus.toLowerCase().includes('error') ? 'error' : ''}`}>{routineStatus}</span>}
+          {routineStatus && <span className={`community__status ${routineStatus.toLowerCase().includes('error') ? 'error' : ''}`}>{replaceEmojisWithIcons(routineStatus)}</span>}
           <button className="btn btn-primary" type="button" onClick={saveTraining} disabled={!trainingRoutine}>
             Guardar entrenamiento
           </button>
@@ -5275,7 +5306,7 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
               </button>
             </header>
 
-            {status && <p className="builder-hint">{status}</p>}
+            {status && <p className="builder-hint">{replaceEmojisWithIcons(status)}</p>}
             {!loading && progress.length === 0 ? (
               <p className="builder-hint">Todavía no has guardado entrenamientos. Ve a Rutinas y pulsa "Iniciar entrenamiento".</p>
             ) : (
@@ -6037,7 +6068,7 @@ function CommunityPage({ currentUser, ensureAuth }) {
                 )}
               </div>
               <div className="community__composer-actions">
-                {status && <span className={`community__status ${status.toLowerCase().includes('error') ? 'error' : ''}`}>{status}</span>}
+                {status && <span className={`community__status ${status.toLowerCase().includes('error') ? 'error' : ''}`}>{replaceEmojisWithIcons(status)}</span>}
                 <button className="btn btn-primary" type="submit" disabled={!canPost || (!content.trim() && !imageFile)}>
                   Publicar
                 </button>
@@ -6347,7 +6378,7 @@ function CommunityPage({ currentUser, ensureAuth }) {
                               commentMessages[post.id].toLowerCase().includes('error') ? 'error' : ''
                             }`}
                           >
-                            {commentMessages[post.id]}
+                            {replaceEmojisWithIcons(commentMessages[post.id])}
                           </p>
                         )}
                     </div>

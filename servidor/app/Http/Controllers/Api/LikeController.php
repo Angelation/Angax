@@ -32,7 +32,7 @@ class LikeController extends Controller
         }
 
         $existingLike = Like::where('postID', $post->postID)
-            ->where('userID', $user->id)
+            ->where('userID', $user->userID)
             ->first();
 
         if ($existingLike) {
@@ -41,7 +41,7 @@ class LikeController extends Controller
         } else {
             Like::create([
                 'postID' => $post->postID,
-                'userID' => $user->id,
+                'userID' => $user->userID,
                 'likeDate' => now(),
                 'isActive' => true,
             ]);

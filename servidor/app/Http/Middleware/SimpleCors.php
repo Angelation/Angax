@@ -21,8 +21,18 @@ class SimpleCors
             : $next($request);
 
         // Use headers bag so this works with StreamedResponse too (no ->header() fluent helper there).
-        $response->headers->set('Access-Control-Allow-Origin', 'http://localhost:5173');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        // Permitir múltiples orígenes: desarrollo (Vite) y producción (Docker)
+        $allowedOrigins = [
+            'http://localhost:5173',  // Vite dev server
+            'http://localhost:3000',  // Docker frontend
+            'http://127.0.0.1:3000',  // Docker frontend (alternativo)
+        ];
+        
+        $origin = $request->headers->get('Origin');
+        $allowedOrigin = in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[1];
+        
+        $response->headers->set('Access-Control-Allow-Origin', $allowedOrigin);
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization, Accept, Origin');
         $response->headers->set('Access-Control-Allow-Credentials', 'true');
 

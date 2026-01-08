@@ -100,7 +100,7 @@ class PostController extends Controller
                 'user_email' => ['required', 'email', 'max:100'],
                 'content' => ['nullable', 'string', 'max:2000'],
                 // max is in KB. 10240KB ~= 10MB
-                'image' => ['nullable', 'image', 'max:10240'],
+                'image' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'],
             ]);
 
             $user = User::where('email', $data['user_email'])->first();
@@ -120,7 +120,15 @@ class PostController extends Controller
 
             $imagePath = null;
             if ($request->hasFile('image')) {
-                $imagePath = $request->file('image')->store('posts', 'public');
+                try {
+                    $imagePath = $request->file('image')->store('posts', 'public');
+                } catch (\Exception $e) {
+                    \Log::error('Error al guardar imagen de publicación: ' . $e->getMessage());
+                    return response()->json([
+                        'message' => 'Error al guardar la imagen: ' . $e->getMessage(),
+                        'errors' => ['image' => ['Error al guardar la imagen']]
+                    ], 500);
+                }
             }
 
             $post = Post::create([
@@ -144,9 +152,11 @@ class PostController extends Controller
                 'liked_by_user' => true,
             ], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $firstError = collect($errors)->flatten()->first();
             return response()->json([
-                'message' => 'Error de validación',
-                'errors' => $e->errors()
+                'message' => $firstError ?? 'Error de validación',
+                'errors' => $errors
             ], 422);
         } catch (\Exception $e) {
             return response()->json([

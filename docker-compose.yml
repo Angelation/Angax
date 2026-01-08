@@ -1,0 +1,82 @@
+services:
+  # Base de datos MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: angax_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-angax}
+      MYSQL_USER: ${DB_USERNAME:-angax_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-angax_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_password}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - angax_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Laravel
+  backend:
+    build:
+      context: ./servidor
+      dockerfile: Dockerfile
+    container_name: angax_backend
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    environment:
+      APP_NAME: ${APP_NAME:-AngaX}
+      APP_ENV: ${APP_ENV:-production}
+      APP_KEY: ${APP_KEY:-}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-angax}
+      DB_USERNAME: ${DB_USERNAME:-angax_user}
+      DB_PASSWORD: ${DB_PASSWORD:-angax_password}
+    volumes:
+      - ./servidor:/var/www/html
+      - backend_storage:/var/www/html/storage
+      - backend_bootstrap:/var/www/html/bootstrap/cache
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - angax_network
+
+  # Frontend React
+  frontend:
+    build:
+      context: ./cliente
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=http://localhost:8000/api
+    container_name: angax_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - angax_network
+
+volumes:
+  mysql_data:
+    driver: local
+  backend_storage:
+    driver: local
+  backend_bootstrap:
+    driver: local
+
+networks:
+  angax_network:
+    driver: bridge
+

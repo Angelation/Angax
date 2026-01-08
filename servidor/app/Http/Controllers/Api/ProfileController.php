@@ -91,37 +91,58 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->validate([
-            'user_email' => ['required', 'email', 'exists:users,email'],
-            'name' => ['required', 'string', 'max:100'],
-            'bio' => ['nullable', 'string', 'max:600'],
-            'profile_photo' => ['nullable', 'image', 'max:3072'],
-        ]);
+        try {
+            $data = $request->validate([
+                'user_email' => ['required', 'email', 'exists:users,email'],
+                'name' => ['required', 'string', 'max:100'],
+                'bio' => ['nullable', 'string', 'max:600'],
+                'profile_photo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:10240'], // 10MB máximo
+            ]);
 
-        $user = User::where('email', $data['user_email'])->first();
-
-        $updates = [
-            'name' => $data['name'],
-            'bio' => $data['bio'] ?? null,
-        ];
-
-        if ($request->hasFile('profile_photo')) {
-            if ($user->profilePhoto) {
-                Storage::disk('public')->delete($user->profilePhoto);
+            $user = User::where('email', $data['user_email'])->first();
+            
+            if (!$user) {
+                return response()->json(['message' => 'Usuario no encontrado'], 404);
             }
-            $path = $request->file('profile_photo')->store('profiles', 'public');
-            $updates['profilePhoto'] = $path;
+
+            $updates = [
+                'name' => $data['name'],
+                'bio' => $data['bio'] ?? null,
+            ];
+
+            if ($request->hasFile('profile_photo')) {
+                try {
+                    if ($user->profilePhoto) {
+                        Storage::disk('public')->delete($user->profilePhoto);
+                    }
+                    $path = $request->file('profile_photo')->store('profiles', 'public');
+                    $updates['profilePhoto'] = $path;
+                } catch (\Exception $e) {
+                    Log::error('Error al guardar foto de perfil: ' . $e->getMessage());
+                    return response()->json(['message' => 'Error al guardar la foto de perfil: ' . $e->getMessage()], 500);
+                }
+            }
+
+            $user->fill($updates);
+            $user->save();
+
+            return response()->json([
+                'name' => $user->name,
+                'email' => $user->email,
+                'bio' => $user->bio,
+                'profile_photo_url' => $user->profilePhoto ? Storage::url($user->profilePhoto) : null,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $firstError = collect($errors)->flatten()->first();
+            return response()->json([
+                'message' => $firstError ?? 'Error de validación',
+                'errors' => $errors,
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar perfil: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al actualizar el perfil: ' . $e->getMessage()], 500);
         }
-
-        $user->fill($updates);
-        $user->save();
-
-        return response()->json([
-            'name' => $user->name,
-            'email' => $user->email,
-            'bio' => $user->bio,
-            'profile_photo_url' => $user->profilePhoto ? Storage::url($user->profilePhoto) : null,
-        ]);
     }
 
     private function getExerciseImagePath($exerciseName, $muscleGroup)

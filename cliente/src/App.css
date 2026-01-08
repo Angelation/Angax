@@ -1469,6 +1469,10 @@ main {
   opacity: 0.6;
 }
 
+.routines-empty-icon .material-icons {
+  font-size: 64px;
+}
+
 .routines-empty-state h3 {
   font-size: 24px;
   font-weight: 700;
@@ -1807,6 +1811,10 @@ main {
   font-size: 64px;
   margin-bottom: 24px;
   opacity: 0.6;
+}
+
+.routines-empty-icon .material-icons {
+  font-size: 64px;
 }
 
 .builder-hint-sub {
@@ -5044,12 +5052,23 @@ main {
 
 .confirm-modal__content {
   position: relative;
-  background: #fff;
+  background: #1a1a1a;
+  border: 1px solid rgba(251, 191, 36, 0.3);
   border-radius: 18px;
   padding: 24px;
   width: min(420px, 90%);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   z-index: 61;
+}
+
+.confirm-modal__content h4 {
+  color: #fbbf24;
+  margin: 0 0 12px 0;
+}
+
+.confirm-modal__content p {
+  color: #fbbf24;
+  margin: 0;
 }
 
 .confirm-modal__actions {
@@ -5152,6 +5171,11 @@ main {
   font-size: 0.85rem;
 }
 
+.chatbot-toggle .material-icons {
+  font-size: 1.2em;
+  margin-right: 6px;
+}
+
 .chatbot-window {
   position: fixed;
   right: 28px;
@@ -5215,14 +5239,22 @@ main {
 
 .message.bot {
   background: #eef2ff;
-  color: #1e1b4b;
+  color: #000000;
   align-self: flex-start;
+}
+
+.message.bot p {
+  color: #000000 !important;
 }
 
 .message.user {
   background: #e0f2fe;
-  color: #0f172a;
+  color: #000000;
   align-self: flex-end;
+}
+
+.message.user p {
+  color: #000000 !important;
 }
 
 .message.typing {
@@ -5282,8 +5314,8 @@ main {
   border: none;
   border-radius: 12px;
   padding: 10px 16px;
-  background: #2563eb;
-  color: #fff;
+  background: #fbbf24;
+  color: #000000;
   font-weight: 600;
   cursor: pointer;
 }

@@ -1,0 +1,28 @@
+# Docker
+.env
+.env.backup
+.env.production
+
+# Archivos temporales
+*.pid
+supervisord.pid
+
+# Logs
+*.log
+
+# Node modules (ya deberían estar ignorados, pero por si acaso)
+node_modules/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Volúmenes de Docker (no subir datos de BD)
+mysql_data/
+

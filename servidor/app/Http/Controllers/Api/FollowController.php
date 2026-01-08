@@ -19,12 +19,12 @@ class FollowController extends Controller
         $follower = User::where('email', $data['follower_email'])->first();
         $following = User::where('email', $data['following_email'])->first();
 
-        if ($follower->id === $following->id) {
+        if ($follower->userID === $following->userID) {
             return response()->json(['message' => 'No puedes seguirte a ti mismo'], 400);
         }
 
-        $follow = Follow::where('followerID', $follower->id)
-            ->where('followingID', $following->id)
+        $follow = Follow::where('followerID', $follower->userID)
+            ->where('followingID', $following->userID)
             ->first();
 
         if ($follow) {
@@ -32,20 +32,20 @@ class FollowController extends Controller
             $isFollowing = false;
         } else {
             Follow::create([
-                'followerID' => $follower->id,
-                'followingID' => $following->id,
+                'followerID' => $follower->userID,
+                'followingID' => $following->userID,
             ]);
             $isFollowing = true;
         }
 
         // Verificar si se siguen mutuamente
-        $mutualFollow = Follow::where('followerID', $following->id)
-            ->where('followingID', $follower->id)
+        $mutualFollow = Follow::where('followerID', $following->userID)
+            ->where('followingID', $follower->userID)
             ->exists();
 
         // Obtener contadores actualizados
-        $followersCount = Follow::where('followingID', $following->id)->count();
-        $followingCount = Follow::where('followerID', $following->id)->count();
+        $followersCount = Follow::where('followingID', $following->userID)->count();
+        $followingCount = Follow::where('followerID', $following->userID)->count();
 
         return response()->json([
             'is_following' => $isFollowing,
@@ -65,12 +65,12 @@ class FollowController extends Controller
         $follower = User::where('email', $data['follower_email'])->first();
         $following = User::where('email', $data['following_email'])->first();
 
-        $isFollowing = Follow::where('followerID', $follower->id)
-            ->where('followingID', $following->id)
+        $isFollowing = Follow::where('followerID', $follower->userID)
+            ->where('followingID', $following->userID)
             ->exists();
 
-        $mutualFollow = Follow::where('followerID', $following->id)
-            ->where('followingID', $follower->id)
+        $mutualFollow = Follow::where('followerID', $following->userID)
+            ->where('followingID', $follower->userID)
             ->exists();
 
         return response()->json([
