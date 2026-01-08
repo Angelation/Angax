@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -50,26 +51,43 @@ class AuthController extends Controller
 
             // Asegurarse de que el role sea válido
             $role = in_array($request->role, ['user', 'trainer']) ? $request->role : 'user';
+            
+            // Preparar fecha en formato simple para SQLite
+            $registerDate = date('Y-m-d');
 
-            $user = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => $role,
-                'registerDate' => now()->format('Y-m-d'),
-                'isActive' => true,
-            ]);
+            // Usar DB::insert directamente para evitar problemas con Eloquent
+            \DB::beginTransaction();
+            try {
+                $userID = \DB::table('users')->insertGetId([
+                    'name' => $validated['name'],
+                    'email' => $validated['email'],
+                    'password' => Hash::make($validated['password']),
+                    'role' => $role,
+                    'registerDate' => $registerDate,
+                    'isActive' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                
+                \DB::commit();
+                
+                // Obtener el usuario creado
+                $user = User::find($userID);
 
-            return response()->json([
-                'user' => [
-                    'id' => $user->userID,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'profile_photo_url' => $user->profilePhoto ? Storage::url($user->profilePhoto) : null,
-                ],
-                'message' => 'Usuario registrado exitosamente',
-            ], 201);
+                return response()->json([
+                    'user' => [
+                        'id' => $user->userID,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'profile_photo_url' => $user->profilePhoto ? Storage::url($user->profilePhoto) : null,
+                    ],
+                    'message' => 'Usuario registrado exitosamente',
+                ], 201);
+            } catch (\Exception $e) {
+                \DB::rollBack();
+                throw $e;
+            }
         } catch (ValidationException $e) {
             $response = response()->json([
                 'message' => 'Error de validación',

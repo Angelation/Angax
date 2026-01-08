@@ -64,50 +64,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             // No usar 'hashed' cast aquí, ya que usamos Hash::make() manualmente en el controlador
-            // registerDate se guarda como string YYYY-MM-DD para compatibilidad con SQLite
             'height' => 'float',
             'weight' => 'float',
             'isActive' => 'boolean',
         ];
-    }
-    
-    /**
-     * Get registerDate as a date attribute
-     */
-    public function getRegisterDateAttribute($value)
-    {
-        if (empty($value)) {
-            return null;
-        }
-        try {
-            return \Carbon\Carbon::parse($value);
-        } catch (\Exception $e) {
-            return $value; // Retornar el valor original si no se puede parsear
-        }
-    }
-    
-    /**
-     * Set registerDate from various formats
-     */
-    public function setRegisterDateAttribute($value)
-    {
-        if ($value instanceof \Carbon\Carbon || $value instanceof \DateTime) {
-            $this->attributes['registerDate'] = $value->format('Y-m-d');
-        } elseif (is_string($value) && !empty($value)) {
-            // Si ya está en formato YYYY-MM-DD, usarlo directamente
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
-                $this->attributes['registerDate'] = $value;
-            } else {
-                // Intentar parsear y formatear
-                try {
-                    $this->attributes['registerDate'] = \Carbon\Carbon::parse($value)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    $this->attributes['registerDate'] = null;
-                }
-            }
-        } else {
-            $this->attributes['registerDate'] = null;
-        }
     }
     
     public function routines()
