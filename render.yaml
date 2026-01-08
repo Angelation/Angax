@@ -1,13 +1,5 @@
 services:
-  # Base de datos PostgreSQL (Render prefiere PostgreSQL)
-  - type: postgresql
-    name: angax-database
-    databaseName: angax
-    user: angax_user
-    plan: free
-    ipAllowList: []
-
-  # Backend Laravel
+  # Backend Laravel (usando SQLite embebido para el plan gratuito)
   - type: web
     name: angax-backend
     env: docker
@@ -27,27 +19,9 @@ services:
           name: angax-backend
           property: host
       - key: DB_CONNECTION
-        value: pgsql
-      - key: DB_HOST
-        fromDatabase:
-          name: angax-database
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: angax-database
-          property: port
+        value: sqlite
       - key: DB_DATABASE
-        fromDatabase:
-          name: angax-database
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: angax-database
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: angax-database
-          property: password
+        value: /var/www/html/database/database.sqlite
     healthCheckPath: /up
     numInstances: 1
 
@@ -66,4 +40,3 @@ services:
           property: host
           transform: https://$(host)/api
     numInstances: 1
-
