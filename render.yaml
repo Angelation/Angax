@@ -1,6 +1,6 @@
 services:
   # Base de datos PostgreSQL (Render prefiere PostgreSQL)
-  - type: pspg
+  - type: postgres
     name: angax-database
     databaseName: angax
     user: angax_user
