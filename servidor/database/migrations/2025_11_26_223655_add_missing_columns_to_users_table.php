@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Agregar role si no existe
+            // Agregar role si no existe (SQLite no soporta ENUM bien, usar string)
             if (!Schema::hasColumn('users', 'role')) {
-                $table->enum('role', ['user', 'trainer'])->default('user')->after('password');
+                $table->string('role', 20)->default('user')->after('password');
             }
             
-            // Agregar registerDate si no existe (SQLite no soporta default(now()))
+            // Agregar registerDate si no existe (SQLite: usar string en lugar de date)
             if (!Schema::hasColumn('users', 'registerDate')) {
-                $table->date('registerDate')->nullable()->after('role');
+                $table->string('registerDate', 10)->nullable()->after('role');
             }
             
             // Agregar height si no existe
