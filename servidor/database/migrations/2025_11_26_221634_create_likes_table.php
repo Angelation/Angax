@@ -19,7 +19,8 @@ return new class extends Migration
             $table->id('likeID');
             $table->unsignedBigInteger('postID')->index();
             $table->unsignedBigInteger('userID')->index();
-            $table->dateTime('likeDate')->default(now());
+            // SQLite no soporta default(now()) para dateTime, lo manejamos en el código
+            $table->dateTime('likeDate')->nullable();
             $table->boolean('isActive')->default(true);
             $table->timestamps();
             

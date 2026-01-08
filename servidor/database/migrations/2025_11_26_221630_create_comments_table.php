@@ -20,7 +20,8 @@ return new class extends Migration
             $table->unsignedBigInteger('postID')->index();
             $table->unsignedBigInteger('userID')->index();
             $table->text('content');
-            $table->dateTime('commentDate')->default(now());
+            // SQLite no soporta default(now()) para dateTime, lo manejamos en el código
+            $table->dateTime('commentDate')->nullable();
             $table->boolean('isActive')->default(true);
             $table->timestamps();
             

@@ -105,6 +105,7 @@ class RoutineController extends Controller
                 'userID' => $user->userID,
                 'routineName' => $data['routineName'],
                 'goal' => $data['goal'] ?? null,
+                'creationDate' => now()->format('Y-m-d'),
                 'isActive' => true,
             ]);
 
