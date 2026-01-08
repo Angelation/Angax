@@ -12,10 +12,35 @@ if [ "$DB_CONNECTION" = "mysql" ] || [ -z "$DB_CONNECTION" ]; then
   echo "MySQL está listo!"
 elif [ "$DB_CONNECTION" = "sqlite" ]; then
   echo "Usando SQLite, no es necesario esperar a MySQL."
+  # En Render, usar /tmp para la base de datos SQLite para evitar problemas de permisos
+  # Si DB_DATABASE no está configurado o es el valor por defecto, usar /tmp
+  if [ -z "$DB_DATABASE" ] || [ "$DB_DATABASE" = "/var/www/html/database/database.sqlite" ]; then
+    DB_DATABASE="/tmp/database.sqlite"
+    export DB_DATABASE
+    # Actualizar .env si existe
+    if [ -f .env ]; then
+      sed -i "s|DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" .env || true
+    fi
+  fi
+  
   # Asegurarse de que el directorio de la base de datos existe
-  mkdir -p $(dirname "$DB_DATABASE")
-  # Crear el archivo SQLite si no existe
-  touch "$DB_DATABASE" 2>/dev/null || true
+  DB_DIR=$(dirname "$DB_DATABASE")
+  mkdir -p "$DB_DIR" 2>/dev/null || true
+  
+  # Crear el archivo SQLite si no existe y establecer permisos
+  touch "$DB_DATABASE" 2>/dev/null || {
+    # Si falla, intentar en /tmp
+    DB_DATABASE="/tmp/database.sqlite"
+    export DB_DATABASE
+    DB_DIR="/tmp"
+    mkdir -p "$DB_DIR" 2>/dev/null || true
+    touch "$DB_DATABASE" 2>/dev/null || true
+  }
+  
+  # Establecer permisos de escritura
+  chmod 666 "$DB_DATABASE" 2>/dev/null || true
+  chmod 777 "$DB_DIR" 2>/dev/null || true
+  echo "Base de datos SQLite configurada en: $DB_DATABASE"
 else
   echo "Usando conexión de base de datos: $DB_CONNECTION"
 fi
@@ -33,7 +58,7 @@ if [ ! -f .env ]; then
         echo "APP_URL=http://localhost:8000" >> .env
         if [ "$DB_CONNECTION" = "sqlite" ]; then
           echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=${DB_DATABASE:-/var/www/html/database/database.sqlite}" >> .env
+          echo "DB_DATABASE=${DB_DATABASE:-/tmp/database.sqlite}" >> .env
         else
           echo "DB_CONNECTION=mysql" >> .env
           echo "DB_HOST=mysql" >> .env
@@ -54,15 +79,46 @@ fi
 # Ejecutar migraciones (solo si la base de datos está configurada)
 echo "Ejecutando migraciones..."
 if [ "$DB_CONNECTION" = "sqlite" ]; then
-  # Para SQLite, asegurarse de que el archivo existe y tiene permisos
-  DB_DIR=$(dirname "$DB_DATABASE")
-  if [ "$DB_DIR" != "." ]; then
-    mkdir -p "$DB_DIR"
+  # Asegurarse de que la base de datos existe y tiene permisos de escritura
+  if [ -z "$DB_DATABASE" ] || [ "$DB_DATABASE" = "/var/www/html/database/database.sqlite" ]; then
+    DB_DATABASE="/tmp/database.sqlite"
+    export DB_DATABASE
   fi
-  touch "$DB_DATABASE" 2>/dev/null || true
-  chmod 664 "$DB_DATABASE" 2>/dev/null || true
-  chmod 775 "$DB_DIR" 2>/dev/null || true
-  echo "Base de datos SQLite creada en: $DB_DATABASE"
+  
+  DB_DIR=$(dirname "$DB_DATABASE")
+  mkdir -p "$DB_DIR" 2>/dev/null || true
+  
+  # Crear archivo si no existe
+  if [ ! -f "$DB_DATABASE" ]; then
+    touch "$DB_DATABASE" 2>/dev/null || {
+      # Si falla, usar /tmp
+      DB_DATABASE="/tmp/database.sqlite"
+      export DB_DATABASE
+      touch "$DB_DATABASE" 2>/dev/null || true
+    }
+  fi
+  
+  # Establecer permisos de escritura (666 = rw-rw-rw-)
+  chmod 666 "$DB_DATABASE" 2>/dev/null || true
+  chmod 777 "$DB_DIR" 2>/dev/null || true
+  
+  # Verificar permisos
+  if [ -w "$DB_DATABASE" ]; then
+    echo "Base de datos SQLite lista en: $DB_DATABASE (permisos OK)"
+  else
+    echo "ADVERTENCIA: La base de datos puede no tener permisos de escritura: $DB_DATABASE"
+    # Intentar crear en /tmp como último recurso
+    DB_DATABASE="/tmp/database.sqlite"
+    export DB_DATABASE
+    touch "$DB_DATABASE" 2>/dev/null || true
+    chmod 666 "$DB_DATABASE" 2>/dev/null || true
+    echo "Base de datos SQLite alternativa en: $DB_DATABASE"
+  fi
+  
+  # Actualizar .env con la ruta correcta
+  if [ -f .env ]; then
+    sed -i "s|DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" .env || true
+  fi
 fi
 php artisan migrate --force || echo "Error al ejecutar migraciones, pero continuando..."
 
