@@ -54,21 +54,26 @@ return new class extends Migration
                 }
             }
 
-            // Agregar foreign key solo si no existe
-            if (Schema::hasColumn('posts', 'userID')) {
-                $foreignKeys = \DB::select("
-                    SELECT CONSTRAINT_NAME 
-                    FROM information_schema.KEY_COLUMN_USAGE 
-                    WHERE TABLE_SCHEMA = DATABASE() 
-                    AND TABLE_NAME = 'posts' 
-                    AND COLUMN_NAME = 'userID' 
-                    AND REFERENCED_TABLE_NAME IS NOT NULL
-                ");
-                
-                if (empty($foreignKeys)) {
-                    Schema::table('posts', function (Blueprint $table) {
-                        $table->foreign('userID')->references('userID')->on('users')->onDelete('cascade');
-                    });
+            // Agregar foreign key solo si no existe y no es SQLite (SQLite no soporta bien foreign keys dinámicas)
+            if (Schema::hasColumn('posts', 'userID') && \DB::getDriverName() !== 'sqlite') {
+                try {
+                    $foreignKeys = \DB::select("
+                        SELECT CONSTRAINT_NAME 
+                        FROM information_schema.KEY_COLUMN_USAGE 
+                        WHERE TABLE_SCHEMA = DATABASE() 
+                        AND TABLE_NAME = 'posts' 
+                        AND COLUMN_NAME = 'userID' 
+                        AND REFERENCED_TABLE_NAME IS NOT NULL
+                    ");
+                    
+                    if (empty($foreignKeys)) {
+                        Schema::table('posts', function (Blueprint $table) {
+                            $table->foreign('userID')->references('userID')->on('users')->onDelete('cascade');
+                        });
+                    }
+                } catch (\Exception $e) {
+                    // Si falla (por ejemplo, en SQLite), simplemente continuar sin foreign key
+                    // SQLite manejará las relaciones de forma lógica pero no física
                 }
             }
         }

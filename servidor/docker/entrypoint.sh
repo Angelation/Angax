@@ -63,39 +63,8 @@ if [ "$DB_CONNECTION" = "sqlite" ]; then
   chmod 664 "$DB_DATABASE" 2>/dev/null || true
   chmod 775 "$DB_DIR" 2>/dev/null || true
   echo "Base de datos SQLite creada en: $DB_DATABASE"
-  
-  # Si la base de datos existe pero está vacía o necesita migraciones
-  # Intentar ejecutar migraciones
-  php artisan migrate --force 2>&1 || echo "Error al ejecutar migraciones, pero continuando..."
-  
-  # Si la tabla users no existe, intentar crearla directamente con el esquema correcto
-  php artisan tinker --execute="
-    try {
-      if (!\Schema::hasTable('users')) {
-        \Schema::create('users', function (\$table) {
-          \$table->id('userID');
-          \$table->string('name', 100);
-          \$table->string('email', 100)->unique();
-          \$table->string('password', 255);
-          \$table->string('role', 20)->default('user');
-          \$table->string('registerDate', 10)->nullable();
-          \$table->float('height')->nullable();
-          \$table->float('weight')->nullable();
-          \$table->string('profilePhoto', 255)->nullable();
-          \$table->boolean('isActive')->default(true);
-          \$table->timestamp('email_verified_at')->nullable();
-          \$table->rememberToken();
-          \$table->timestamps();
-        });
-        echo 'Tabla users creada manualmente';
-      }
-    } catch (\Exception \$e) {
-      echo 'Error: ' . \$e->getMessage();
-    }
-  " 2>&1 || true
-else
-  php artisan migrate --force || echo "Error al ejecutar migraciones, pero continuando..."
 fi
+php artisan migrate --force || echo "Error al ejecutar migraciones, pero continuando..."
 
 # Limpiar caché
 echo "Limpiando caché..."
