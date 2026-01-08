@@ -1,5 +1,13 @@
 services:
-  # Backend Laravel (con MySQL embebido o PostgreSQL)
+  # Base de datos PostgreSQL (Render prefiere PostgreSQL)
+  - type: pspg
+    name: angax-database
+    databaseName: angax
+    user: angax_user
+    plan: free
+    ipAllowList: []
+
+  # Backend Laravel
   - type: web
     name: angax-backend
     env: docker
@@ -19,9 +27,27 @@ services:
           name: angax-backend
           property: host
       - key: DB_CONNECTION
-        value: sqlite
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: angax-database
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: angax-database
+          property: port
       - key: DB_DATABASE
-        value: /var/www/html/database/database.sqlite
+        fromDatabase:
+          name: angax-database
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: angax-database
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: angax-database
+          property: password
     healthCheckPath: /up
     numInstances: 1
 
@@ -32,7 +58,6 @@ services:
     dockerfilePath: ./cliente/Dockerfile
     dockerContext: ./cliente
     plan: starter
-    buildCommand: echo "Building frontend..."
     envVars:
       - key: VITE_API_BASE_URL
         fromService:

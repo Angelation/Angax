@@ -11,12 +11,14 @@ RUN apk add --no-cache \
     unzip \
     oniguruma-dev \
     mysql-client \
+    postgresql-dev \
+    postgresql-client \
     nginx \
     supervisor \
     bash
 
-# Instalar extensiones de PHP
-RUN docker-php-ext-install pdo_mysql pdo mbstring exif pcntl bcmath gd
+# Instalar extensiones de PHP (MySQL y PostgreSQL)
+RUN docker-php-ext-install pdo_mysql pdo_pgsql pdo mbstring exif pcntl bcmath gd
 
 # Configurar límites de PHP para archivos grandes
 RUN echo "upload_max_filesize = 20M" >> /usr/local/etc/php/conf.d/uploads.ini \
