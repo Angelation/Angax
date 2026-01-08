@@ -18,7 +18,7 @@ services:
       - key: DB_CONNECTION
         value: sqlite
       - key: DB_DATABASE
-        value: /var/www/html/database/database.sqlite
+        value: /tmp/database.sqlite
     healthCheckPath: /up
     numInstances: 1
 
