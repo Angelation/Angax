@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420">
+  <!-- Subtle gym pattern: dumbbells + plates. Intentionally low contrast. -->
+  <defs>
+    <pattern id="gym" width="210" height="210" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="rgba(15,23,42,0.18)" stroke-width="2">
+        <!-- Dumbbell -->
+        <g transform="translate(26 38) rotate(-8 72 26)">
+          <rect x="8" y="14" width="18" height="24" rx="6"/>
+          <rect x="118" y="14" width="18" height="24" rx="6"/>
+          <rect x="26" y="22" width="92" height="8" rx="4"/>
+          <rect x="0" y="10" width="10" height="32" rx="5"/>
+          <rect x="144" y="10" width="10" height="32" rx="5"/>
+        </g>
+
+        <!-- Plate -->
+        <g transform="translate(132 132)">
+          <circle cx="36" cy="36" r="30"/>
+          <circle cx="36" cy="36" r="18"/>
+          <circle cx="36" cy="36" r="4"/>
+        </g>
+
+        <!-- Bar (minimal line) -->
+        <path d="M24 178 H156" stroke="rgba(15,23,42,0.14)" stroke-linecap="round"/>
+      </g>
+
+      <!-- Accent dots (very subtle) -->
+      <g fill="rgba(37,99,235,0.10)">
+        <circle cx="22" cy="22" r="2"/>
+        <circle cx="188" cy="40" r="2"/>
+        <circle cx="48" cy="196" r="2"/>
+      </g>
+    </pattern>
+  </defs>
+
+  <rect width="420" height="420" fill="url(#gym)"/>
+</svg>
+
+
