@@ -129,6 +129,23 @@ php artisan cache:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 
+# Asegurarse de que SQLite esté configurado correctamente después de limpiar caché
+if [ "$DB_CONNECTION" = "sqlite" ]; then
+  # Verificar nuevamente que la base de datos esté en /tmp y tenga permisos
+  if [ -z "$DB_DATABASE" ] || [ "$DB_DATABASE" != "/tmp/database.sqlite" ]; then
+    DB_DATABASE="/tmp/database.sqlite"
+    export DB_DATABASE
+    if [ -f .env ]; then
+      sed -i "s|DB_DATABASE=.*|DB_DATABASE=$DB_DATABASE|" .env || true
+    fi
+  fi
+  
+  # Crear base de datos si no existe y establecer permisos
+  touch "$DB_DATABASE" 2>/dev/null || true
+  chmod 666 "$DB_DATABASE" 2>/dev/null || true
+  echo "Base de datos SQLite verificada en: $DB_DATABASE"
+fi
+
 # Registrar rutas antes de cachear
 echo "Registrando rutas..."
 php artisan route:list || true
