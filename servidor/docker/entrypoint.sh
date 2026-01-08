@@ -55,11 +55,16 @@ fi
 echo "Ejecutando migraciones..."
 if [ "$DB_CONNECTION" = "sqlite" ]; then
   # Para SQLite, asegurarse de que el archivo existe y tiene permisos
-  mkdir -p $(dirname "$DB_DATABASE")
+  DB_DIR=$(dirname "$DB_DATABASE")
+  if [ "$DB_DIR" != "." ]; then
+    mkdir -p "$DB_DIR"
+  fi
   touch "$DB_DATABASE" 2>/dev/null || true
   chmod 664 "$DB_DATABASE" 2>/dev/null || true
+  chmod 775 "$DB_DIR" 2>/dev/null || true
+  echo "Base de datos SQLite creada en: $DB_DATABASE"
 fi
-php artisan migrate --force || true
+php artisan migrate --force || echo "Error al ejecutar migraciones, pero continuando..."
 
 # Limpiar caché
 echo "Limpiando caché..."
