@@ -21,15 +21,27 @@ class SimpleCors
             : $next($request);
 
         // Use headers bag so this works with StreamedResponse too (no ->header() fluent helper there).
-        // Permitir múltiples orígenes: desarrollo (Vite) y producción (Docker)
+        // Permitir múltiples orígenes: desarrollo (Vite), Docker local y Render
         $allowedOrigins = [
             'http://localhost:5173',  // Vite dev server
-            'http://localhost:3000',  // Docker frontend
-            'http://127.0.0.1:3000',  // Docker frontend (alternativo)
+            'http://localhost:3000',  // Docker frontend local
+            'http://127.0.0.1:3000',  // Docker frontend local (alternativo)
+            'https://angax-frontend.onrender.com',  // Render frontend
+            'http://angax-frontend.onrender.com',   // Render frontend (HTTP)
         ];
         
         $origin = $request->headers->get('Origin');
-        $allowedOrigin = in_array($origin, $allowedOrigins) ? $origin : $allowedOrigins[1];
+        
+        // Si el origen está en la lista permitida, usarlo; si no, permitir el origen de Render
+        if ($origin && in_array($origin, $allowedOrigins)) {
+            $allowedOrigin = $origin;
+        } elseif ($origin && str_contains($origin, 'onrender.com')) {
+            // Permitir cualquier subdominio de Render
+            $allowedOrigin = $origin;
+        } else {
+            // Por defecto, permitir el frontend de Render
+            $allowedOrigin = 'https://angax-frontend.onrender.com';
+        }
         
         $response->headers->set('Access-Control-Allow-Origin', $allowedOrigin);
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
