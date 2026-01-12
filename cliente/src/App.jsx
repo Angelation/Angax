@@ -3940,11 +3940,13 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
           const reader = new FileReader()
           reader.onloadend = () => {
             const base64data = reader.result
+            const imageFileName = `rutina-${routine.routineName.replace(/\s+/g, '-')}.png`
             sessionStorage.setItem('shareImage', base64data)
-            sessionStorage.setItem('shareImageName', `rutina-${routine.routineName.replace(/\s+/g, '-')}.png`)
-            // Guardar la rutina completa para el modal si hay más de 3 ejercicios
+            sessionStorage.setItem('shareImageName', imageFileName)
+            // Guardar la rutina completa en localStorage asociada al nombre de la imagen
+            // Esto permitirá recuperarla cuando se publique el post
             if (exercises.length > 3) {
-              sessionStorage.setItem('sharedRoutine', JSON.stringify(routine))
+              localStorage.setItem(`sharedRoutine_${imageFileName}`, JSON.stringify(routine))
             }
             
             // Limpiar
@@ -5748,6 +5750,7 @@ function CommunityPage({ currentUser, ensureAuth }) {
   const [commentLikeAnimations, setCommentLikeAnimations] = useState({})
   const [commentsPage, setCommentsPage] = useState({}) // { postId: pageNumber }
   const [commentsTotal, setCommentsTotal] = useState({}) // { postId: totalCount }
+  const [sharedRoutineModal, setSharedRoutineModal] = useState(null)
 
   const canPost = Boolean(currentUser)
   const renderPostContent = (post) => {
@@ -5816,7 +5819,6 @@ function CommunityPage({ currentUser, ensureAuth }) {
     // Cargar imagen desde sessionStorage si existe
     const shareImageData = sessionStorage.getItem('shareImage')
     const shareImageName = sessionStorage.getItem('shareImageName')
-    const sharedRoutineData = sessionStorage.getItem('sharedRoutine')
     if (shareImageData && shareImageName) {
       // Convertir base64 a File
       fetch(shareImageData)
@@ -5824,15 +5826,15 @@ function CommunityPage({ currentUser, ensureAuth }) {
         .then(blob => {
           const file = new File([blob], shareImageName, { type: 'image/png' })
           setImageFile(file)
-          // Si hay una rutina compartida, guardarla en el estado
-          if (sharedRoutineData) {
-            try {
-              const routine = JSON.parse(sharedRoutineData)
+          // Buscar rutina compartida en localStorage asociada al nombre del archivo
+          try {
+            const routineData = localStorage.getItem(`sharedRoutine_${shareImageName}`)
+            if (routineData) {
+              const routine = JSON.parse(routineData)
               setSharedRoutineModal(routine)
-              sessionStorage.removeItem('sharedRoutine')
-            } catch (e) {
-              console.error('Error al parsear rutina compartida:', e)
             }
+          } catch (e) {
+            console.error('Error al cargar rutina compartida desde localStorage:', e)
           }
           // Limpiar sessionStorage
           sessionStorage.removeItem('shareImage')
@@ -5842,9 +5844,6 @@ function CommunityPage({ currentUser, ensureAuth }) {
           console.error('Error al cargar imagen compartida:', err)
           sessionStorage.removeItem('shareImage')
           sessionStorage.removeItem('shareImageName')
-          if (sharedRoutineData) {
-            sessionStorage.removeItem('sharedRoutine')
-          }
         })
     }
   }, [location.search])
@@ -5943,6 +5942,23 @@ function CommunityPage({ currentUser, ensureAuth }) {
         }
         const errorMsg = data.message || data.error || 'No se pudo publicar'
         throw new Error(errorMsg)
+      }
+      
+      // Si hay una rutina compartida y la publicación fue exitosa, guardarla asociada a la URL de la imagen
+      if (data.image_url && sharedRoutineModal) {
+        try {
+          // Extraer el nombre del archivo de la URL
+          const imageUrl = data.image_url
+          const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${backendBaseUrl}${imageUrl}`
+          const imageName = imageUrl.split('/').pop() || ''
+          // Guardar la rutina asociada a la URL completa y al nombre del archivo
+          localStorage.setItem(`sharedRoutine_${fullImageUrl}`, JSON.stringify(sharedRoutineModal))
+          if (imageName) {
+            localStorage.setItem(`sharedRoutine_${imageName}`, JSON.stringify(sharedRoutineModal))
+          }
+        } catch (e) {
+          console.error('Error al guardar rutina compartida:', e)
+        }
       }
       
       setContent('')
@@ -6492,18 +6508,68 @@ function CommunityPage({ currentUser, ensureAuth }) {
                     </div>
                   </header>
                   {renderPostContent(post)}
-                  {post.image_url && (
-                    <div className="community-post__image">
-                      <img
-                        src={
-                          post.image_url.startsWith('http')
-                            ? post.image_url
-                            : `${backendBaseUrl}${post.image_url}`
-                        }
-                        alt="Publicación de la comunidad"
-                      />
-                    </div>
-                  )}
+                  {post.image_url && (() => {
+                    const fullImageUrl = post.image_url.startsWith('http')
+                      ? post.image_url
+                      : `${backendBaseUrl}${post.image_url}`
+                    // Buscar si hay una rutina compartida para esta imagen
+                    const imageName = post.image_url.split('/').pop() || ''
+                    let sharedRoutine = null
+                    try {
+                      const routineByUrl = localStorage.getItem(`sharedRoutine_${fullImageUrl}`)
+                      const routineByName = imageName ? localStorage.getItem(`sharedRoutine_${imageName}`) : null
+                      const routineData = routineByUrl || routineByName
+                      if (routineData) {
+                        sharedRoutine = JSON.parse(routineData)
+                      }
+                    } catch (e) {
+                      console.error('Error al cargar rutina compartida:', e)
+                    }
+                    
+                    return (
+                      <div className="community-post__image">
+                        <img
+                          src={fullImageUrl}
+                          alt="Publicación de la comunidad"
+                        />
+                        {sharedRoutine && sharedRoutine.exercises && sharedRoutine.exercises.length > 3 && (
+                          <div style={{ 
+                            padding: '12px', 
+                            textAlign: 'center',
+                            borderTop: '1px solid rgba(251, 191, 36, 0.2)',
+                            background: 'rgba(26, 32, 44, 0.5)'
+                          }}>
+                            <button
+                              type="button"
+                              onClick={() => setSharedRoutineModal(sharedRoutine)}
+                              style={{
+                                padding: '8px 16px',
+                                background: 'transparent',
+                                color: '#fbbf24',
+                                border: '1px solid #fbbf24',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                textDecoration: 'none',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.target.style.background = '#fbbf24'
+                                e.target.style.color = '#000'
+                              }}
+                              onMouseLeave={(e) => {
+                                e.target.style.background = 'transparent'
+                                e.target.style.color = '#fbbf24'
+                              }}
+                            >
+                              Ver rutina completa ({sharedRoutine.exercises.length} ejercicios) →
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                   <footer className="community-post__footer">
                     <button
                       type="button"
