@@ -1256,19 +1256,19 @@ function App() {
               <div className="footer__column">
                 <h5>Plataforma</h5>
                 <ul>
-                  <li><a href="#inicio">Inicio</a></li>
-                  <li><a href="#panel">Panel</a></li>
-                  <li><a href="#por-que-angax">Por qué AngaX</a></li>
-                  <li><a href="#comunidad">Comunidad</a></li>
+                  <li><a href="/#inicio" onClick={(e) => { e.preventDefault(); navigate('/'); setTimeout(() => { const el = document.getElementById('inicio'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100); }}>Inicio</a></li>
+                  <li><a href="/#panel" onClick={(e) => { e.preventDefault(); navigate('/'); setTimeout(() => { const el = document.getElementById('panel'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100); }}>Panel</a></li>
+                  <li><a href="/#por-que-angax" onClick={(e) => { e.preventDefault(); navigate('/'); setTimeout(() => { const el = document.getElementById('por-que-angax'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100); }}>Por qué AngaX</a></li>
+                  <li><a href="/#comunidad" onClick={(e) => { e.preventDefault(); navigate('/'); setTimeout(() => { const el = document.getElementById('comunidad'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100); }}>Comunidad</a></li>
                 </ul>
               </div>
               
               <div className="footer__column">
                 <h5>Recursos</h5>
                 <ul>
-                  <li><a href="/rutinas">Rutinas</a></li>
-                  <li><a href="/progreso">Progreso</a></li>
-                  <li><a href="#trabaja-con-nosotros">Trabaja con nosotros</a></li>
+                  <li><a href="/rutinas" onClick={(e) => { e.preventDefault(); navigate('/rutinas'); }}>Rutinas</a></li>
+                  <li><a href="/progreso" onClick={(e) => { e.preventDefault(); navigate('/progreso'); }}>Progreso</a></li>
+                  <li><a href="/#trabaja-con-nosotros" onClick={(e) => { e.preventDefault(); navigate('/'); setTimeout(() => { const el = document.getElementById('trabaja-con-nosotros'); if (el) el.scrollIntoView({ behavior: 'smooth' }); }, 100); }}>Trabaja con nosotros</a></li>
                 </ul>
               </div>
               
@@ -2282,6 +2282,7 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
   const [studentRoutines, setStudentRoutines] = useState([])
   const [loadingStudentRoutines, setLoadingStudentRoutines] = useState(false)
   const [pendingDeleteClient, setPendingDeleteClient] = useState(null)
+  const [sharedRoutineModal, setSharedRoutineModal] = useState(null)
 
   useEffect(() => {
     if (!userLoaded) return
@@ -3576,7 +3577,7 @@ function LandingContent({ metrics, focusAreas, roadmap, goToSection, onProgramsC
                     <option value="desarrollo" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Desarrollo</option>
                     <option value="diseño" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Diseño</option>
                     <option value="marketing" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Marketing</option>
-                    <option value="fitness" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Fitness y Entrenamiento</option>
+                    <option value="fitness" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Fitness y entrenamiento</option>
                     <option value="otro" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Otro</option>
                   </select>
                 </label>
@@ -3802,7 +3803,8 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       exercisesContainer.style.maxHeight = 'none'
       
       const exercises = routine.exercises || []
-      exercises.slice(0, 10).forEach((ex) => {
+      // Mostrar solo los primeros 3 ejercicios en la imagen
+      exercises.slice(0, 3).forEach((ex) => {
         const exerciseCard = document.createElement('div')
         exerciseCard.style.display = 'flex'
         exerciseCard.style.alignItems = 'center'
@@ -3940,6 +3942,10 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
             const base64data = reader.result
             sessionStorage.setItem('shareImage', base64data)
             sessionStorage.setItem('shareImageName', `rutina-${routine.routineName.replace(/\s+/g, '-')}.png`)
+            // Guardar la rutina completa para el modal si hay más de 3 ejercicios
+            if (exercises.length > 3) {
+              sessionStorage.setItem('sharedRoutine', JSON.stringify(routine))
+            }
             
             // Limpiar
             document.body.removeChild(shareContainer)
@@ -5810,6 +5816,7 @@ function CommunityPage({ currentUser, ensureAuth }) {
     // Cargar imagen desde sessionStorage si existe
     const shareImageData = sessionStorage.getItem('shareImage')
     const shareImageName = sessionStorage.getItem('shareImageName')
+    const sharedRoutineData = sessionStorage.getItem('sharedRoutine')
     if (shareImageData && shareImageName) {
       // Convertir base64 a File
       fetch(shareImageData)
@@ -5817,6 +5824,16 @@ function CommunityPage({ currentUser, ensureAuth }) {
         .then(blob => {
           const file = new File([blob], shareImageName, { type: 'image/png' })
           setImageFile(file)
+          // Si hay una rutina compartida, guardarla en el estado
+          if (sharedRoutineData) {
+            try {
+              const routine = JSON.parse(sharedRoutineData)
+              setSharedRoutineModal(routine)
+              sessionStorage.removeItem('sharedRoutine')
+            } catch (e) {
+              console.error('Error al parsear rutina compartida:', e)
+            }
+          }
           // Limpiar sessionStorage
           sessionStorage.removeItem('shareImage')
           sessionStorage.removeItem('shareImageName')
@@ -5825,6 +5842,9 @@ function CommunityPage({ currentUser, ensureAuth }) {
           console.error('Error al cargar imagen compartida:', err)
           sessionStorage.removeItem('shareImage')
           sessionStorage.removeItem('shareImageName')
+          if (sharedRoutineData) {
+            sessionStorage.removeItem('sharedRoutine')
+          }
         })
     }
   }, [location.search])
@@ -5927,6 +5947,7 @@ function CommunityPage({ currentUser, ensureAuth }) {
       
       setContent('')
       setImageFile(null)
+      setSharedRoutineModal(null)
       setStatus('Publicado ✅')
       setTimeout(() => setStatus(''), 3000)
       fetchPosts()
@@ -6367,32 +6388,54 @@ function CommunityPage({ currentUser, ensureAuth }) {
                   </span>
                 </label>
                 {imageFile && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setImageFile(null)
-                      const fileInput = document.querySelector('input[type="file"]')
-                      if (fileInput) fileInput.value = ''
-                    }}
-                    style={{
-                      background: '#DC2626',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: '18px',
-                      fontWeight: 'bold',
-                      flexShrink: 0
-                    }}
-                    title="Eliminar imagen"
-                  >
-                    ×
-                  </button>
+                  <>
+                    {sharedRoutineModal && (
+                      <button
+                        type="button"
+                        onClick={() => setSharedRoutineModal(sharedRoutineModal)}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#fbbf24',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          marginRight: '8px'
+                        }}
+                      >
+                        Ver rutina completa ({sharedRoutineModal.exercises?.length || 0} ejercicios)
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImageFile(null)
+                        setSharedRoutineModal(null)
+                        const fileInput = document.querySelector('input[type="file"]')
+                        if (fileInput) fileInput.value = ''
+                      }}
+                      style={{
+                        background: '#DC2626',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                      }}
+                      title="Eliminar imagen"
+                    >
+                      ×
+                    </button>
+                  </>
                 )}
               </div>
               <div className="community__composer-actions">
@@ -6718,6 +6761,109 @@ function CommunityPage({ currentUser, ensureAuth }) {
         </div>
       </div>
 
+
+      {sharedRoutineModal && createPortal(
+        <div className="auth-modal open" role="dialog" aria-modal="true" aria-label="Rutina completa">
+          <div className="auth-modal__backdrop" onClick={() => setSharedRoutineModal(null)} />
+          <div className="auth-modal__content" style={{ width: 'min(900px, 92%)' }}>
+            <button
+              type="button"
+              className="auth-modal__close"
+              onClick={() => setSharedRoutineModal(null)}
+              aria-label="Cerrar modal"
+            >
+              ×
+            </button>
+            <div className="auth-modal__header">
+              <h2 style={{ color: '#fbbf24', marginBottom: '8px' }}>{sharedRoutineModal.routineName}</h2>
+              {sharedRoutineModal.goal && <p style={{ color: '#a3a3a3', margin: 0 }}>{sharedRoutineModal.goal}</p>}
+            </div>
+
+            <div style={{ marginTop: '24px' }}>
+              {sharedRoutineModal.exercises && sharedRoutineModal.exercises.length > 0 ? (
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '16px', 
+                    maxHeight: '60vh', 
+                    overflowY: 'auto', 
+                    paddingRight: '8px',
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: '#4a5568 #1a202c'
+                  }}
+                  className="trainer-routines-scroll"
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {sharedRoutineModal.exercises.map((exercise, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '12px',
+                          background: '#1a1a1a',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(251, 191, 36, 0.1)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <div>
+                          <strong style={{ color: '#fbbf24', display: 'block', fontSize: '14px' }}>{exercise.exerciseName}</strong>
+                          <small style={{ color: '#a3a3a3', fontSize: '12px', textTransform: 'capitalize' }}>{exercise.muscleGroup}</small>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {exercise.sets && (
+                            <span style={{
+                              padding: '4px 8px',
+                              background: 'rgba(251, 191, 36, 0.2)',
+                              color: '#fbbf24',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              {exercise.sets} series
+                            </span>
+                          )}
+                          {exercise.reps && (
+                            <span style={{
+                              padding: '4px 8px',
+                              background: 'rgba(251, 191, 36, 0.2)',
+                              color: '#fbbf24',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              {exercise.reps} reps
+                            </span>
+                          )}
+                          {exercise.weight && (
+                            <span style={{
+                              padding: '4px 8px',
+                              background: 'rgba(251, 191, 36, 0.2)',
+                              color: '#fbbf24',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: '600'
+                            }}>
+                              {exercise.weight} kg
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '40px', textAlign: 'center', background: '#1a1a1a', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                  <p style={{ color: '#a3a3a3' }}>No hay ejercicios disponibles.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {pendingDeletePost &&
         createPortal(
