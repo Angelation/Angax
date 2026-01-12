@@ -49,12 +49,86 @@ const metrics = [
   { label: 'Entrenadores aliados', value: '380+' },
 ]
 
+// Lista de consejos aleatorios sobre ejercicios y entrenamiento
+const exerciseTips = [
+  '💪 Tip de entrenamiento: Siempre calienta al menos 5-10 minutos antes de entrenar. Un buen calentamiento reduce el riesgo de lesiones y mejora tu rendimiento.',
+  '🔥 Tip de nutrición: Consume proteínas dentro de los 30 minutos posteriores al entrenamiento. Esto ayuda a la recuperación y crecimiento muscular.',
+  '⏱️ Tip de descanso: Descansa entre 48-72 horas antes de trabajar el mismo grupo muscular. Los músculos crecen durante el descanso, no durante el entrenamiento.',
+  '📊 Tip de progresión: Intenta aumentar el peso, repeticiones o series cada semana. La progresión constante es clave para mejorar.',
+  '🧘 Tip de técnica: La técnica correcta es más importante que el peso. Mejor hacer bien con menos peso que mal con más.',
+  '💧 Tip de hidratación: Bebe agua durante todo el entrenamiento, no solo cuando tengas sed. La deshidratación afecta tu rendimiento.',
+  '🛌 Tip de sueño: Duerme al menos 7-8 horas diarias. El sueño es crucial para la recuperación muscular y el crecimiento.',
+  '🎯 Tip de enfoque: Concéntrate en la contracción del músculo que estás trabajando. La conexión mente-músculo mejora los resultados.',
+  '📈 Tip de variedad: Varía tus ejercicios cada 6-8 semanas para evitar estancamientos y mantener la motivación.',
+  '🏋️ Tip de volumen: Para hipertrofia, trabaja cada grupo muscular 2-3 veces por semana con 3-4 ejercicios diferentes.',
+  '🔄 Tip de repeticiones: Para fuerza: 1-5 reps. Para hipertrofia: 6-12 reps. Para resistencia: 15+ reps.',
+  '⏸️ Tip de pausa: Descansa 60-90 segundos entre series para hipertrofia, 2-3 minutos para fuerza máxima.',
+  '🌡️ Tip de temperatura: No estires en frío antes del entrenamiento. Es mejor hacer estiramientos dinámicos.',
+  '🥗 Tip de alimentación: Come un snack rico en carbohidratos 30-60 minutos antes de entrenar para tener energía.',
+  '🚫 Tip de lesiones: Si sientes dolor agudo, detente inmediatamente. No confundas dolor con esfuerzo muscular.',
+  '📱 Tip de tracking: Registra tus entrenamientos. Ver tu progreso te mantiene motivado y te ayuda a ajustar tu rutina.',
+  '🎵 Tip de motivación: Escucha música mientras entrenas. Puede aumentar tu rendimiento hasta un 15%.',
+  '🤝 Tip de compañero: Entrenar con un compañero puede aumentar tu intensidad y mantenerte más consistente.',
+  '🧠 Tip mental: Visualiza tu entrenamiento antes de hacerlo. Esto prepara tu mente y cuerpo.',
+  '⚡ Tip de energía: El mejor momento para entrenar fuerza es cuando tengas más energía, ya sea mañana o tarde.',
+  '🏃 Tip cardiovascular: Incluye 20-30 minutos de cardio después de tu entrenamiento de fuerza para mejorar la condición.',
+  '🎨 Tip de creatividad: No te limites a los mismos ejercicios. Prueba variaciones para trabajar los músculos desde diferentes ángulos.',
+  '📏 Tip de forma: Si no puedes mantener la forma correcta en las últimas repeticiones, reduce el peso o las repeticiones.',
+  '🔥 Tip de intensidad: El último set debe ser desafiante. Si puedes hacer fácilmente todas las repeticiones, aumenta la carga.',
+  '🌙 Tip de descanso activo: En días de descanso, haz estiramientos o caminata ligera para mejorar la recuperación.',
+  '💊 Tip de suplementos: Los suplementos son complementos, no reemplazos. Prioriza una alimentación balanceada.',
+  '🎯 Tip de objetivos: Establece objetivos realistas y específicos. "Ganar 2kg de músculo en 3 meses" es mejor que "estar más fuerte".',
+  '📸 Tip de progreso: Toma fotos de tu progreso semanalmente. Los cambios visuales te motivarán a seguir.',
+  '🧘 Tip de respiración: Exhala durante el esfuerzo (fase concéntrica) e inhala durante la relajación (fase excéntrica).',
+  '🏆 Tip de celebración: Celebra tus pequeños logros. Cada repetición extra o kilo más cuenta.',
+]
+
+const getRandomTip = () => {
+  return exerciseTips[Math.floor(Math.random() * exerciseTips.length)]
+}
+
 const getInitialChatMessage = (isLoggedIn) => ({
   id: 1,
   from: 'bot',
   text: isLoggedIn
-    ? '¡Hola! 👋 Soy Angel, tu ayudante virtual para AngaX. Puedo enseñarte cómo comenzar y muchas cosas más. ¿En qué te puedo ayudar?'
-    : '¡Hola! 👋 Soy Angel, tu ayudante virtual para AngaX. Puedo enseñarte cómo comenzar y muchas cosas más. Inicia sesión para acceder a todas las funciones. ¿En qué te puedo ayudar?',
+    ? `¡Hola! 👋 Soy Angel, tu asistente virtual de AngaX. Estoy aquí para ayudarte a alcanzar tus objetivos de entrenamiento.
+
+💡 ¿Qué puedo hacer por ti?
+
+✅ Gestión de rutinas: Crear, ver y gestionar tus rutinas de entrenamiento
+✅ Seguimiento de progreso: Consultar tus estadísticas, gráficas y evolución
+✅ Información de ejercicios: Buscar ejercicios por grupo muscular
+✅ Navegación: Llevarte a cualquier sección de AngaX
+✅ Guías paso a paso: Explicarte cómo usar todas las funciones
+
+🎯 Preguntas que puedes hacerme:
+• "¿Cómo creo mi rutina?"
+• "Muéstrame mi progreso"
+• "¿Qué ejercicios hay?"
+• "Llévame a rutinas"
+• "Dame un consejo de entrenamiento"
+
+💪 Consejos y tips: También puedo darte consejos aleatorios sobre ejercicios, nutrición, técnica, recuperación y más. Solo pregunta "dame un consejo" o "tip de entrenamiento".
+
+¿En qué te puedo ayudar hoy? 🤔`
+    : `¡Hola! 👋 Soy Angel, tu asistente virtual de AngaX. Estoy aquí para ayudarte a alcanzar tus objetivos de entrenamiento.
+
+💡 ¿Qué puedo hacer por ti?
+
+✅ Información sobre AngaX: Explicarte cómo funciona la plataforma
+✅ Guías y tutoriales: Mostrarte paso a paso cómo usar las funciones
+✅ Consejos de entrenamiento: Darte tips aleatorios sobre ejercicios y fitness
+
+🎯 Preguntas que puedes hacerme:
+• "¿Cómo funciona AngaX?"
+• "¿Cómo comienzo?"
+• "Dame un consejo de entrenamiento"
+
+💪 Consejos y tips: Puedo darte consejos aleatorios sobre ejercicios, nutrición, técnica, recuperación y más. Solo pregunta "dame un consejo" o "tip de entrenamiento".
+
+Inicia sesión para acceder a todas las funciones: gestión de rutinas, seguimiento de progreso, ejercicios personalizados y más.
+
+¿En qué te puedo ayudar? 🤔`,
 })
 
 const avatarColors = ['#fda4af', '#fbcfe8', '#c4b5fd', '#a5b4fc', '#93c5fd', '#99f6e4', '#fecdd3']
@@ -83,26 +157,67 @@ const buildBotResponse = async (text, currentUser, navigate) => {
   
   // Saludos
   if (normalized.match(/^(hola|hi|hey|buenos|buenas|saludos)/)) {
-    return '¡Hola! 👋 Soy Angel, tu asistente. Puedo ayudarte con tus rutinas, progreso, ejercicios y más. ¿Qué necesitas?'
+    if (currentUser) {
+      return `¡Hola! 👋 ¡Qué gusto saludarte de nuevo!
+
+💡 ¿En qué puedo ayudarte hoy?
+
+✅ Rutinas: Crear, ver y gestionar tus rutinas de entrenamiento
+✅ Progreso: Consultar tus estadísticas y evolución
+✅ Ejercicios: Buscar ejercicios por grupo muscular
+✅ Navegación: Llevarte a cualquier sección
+✅ Consejos: Tips aleatorios sobre entrenamiento
+
+🎯 Preguntas que puedes hacerme:
+• "¿Cómo creo mi rutina?"
+• "Muéstrame mi progreso"
+• "Dame un consejo de entrenamiento"
+
+¿Qué necesitas? 🤔`
+    } else {
+      return `¡Hola! 👋 Soy Angel, tu asistente virtual de AngaX.
+
+💡 Puedo ayudarte con:
+
+✅ Información sobre AngaX y cómo funciona
+✅ Guías paso a paso de las funciones
+✅ Consejos aleatorios sobre entrenamiento y fitness
+
+🎯 Ejemplos de preguntas:
+• "¿Cómo funciona AngaX?"
+• "Dame un consejo de entrenamiento"
+
+Inicia sesión para acceder a todas las funciones completas.
+
+¿En qué te puedo ayudar? 🤔`
+    }
+  }
+  
+  // Consejos y tips de entrenamiento
+  if (normalized.includes('consejo') || normalized.includes('tip') || normalized.includes('ayuda para entrenar') || 
+      normalized.includes('recomendación') || normalized.includes('sugerencia') || normalized.includes('truco')) {
+    return getRandomTip() + '\n\n💪 ¿Quieres otro consejo? Solo pregunta "dame otro consejo" o "más tips".'
   }
   
   // Ayuda general
   if (normalized.includes('ayuda') || normalized.includes('help') || normalized.includes('qué puedes') || normalized.includes('que puedes')) {
-    return `💡 **¿En qué puedo ayudarte?**
+    return `💡 ¿En qué puedo ayudarte?
 
 Puedo ayudarte con:
 
-✅ **Rutinas:** Ver tus rutinas, crear nuevas, explicarte cómo hacerlo
-✅ **Progreso:** Consultar tus estadísticas, entrenamientos y gráficas
-✅ **Ejercicios:** Buscar ejercicios por grupo muscular
-✅ **Navegación:** Llevarte a cualquier sección de AngaX
-✅ **Guías:** Explicarte paso a paso cómo usar las funciones
+✅ Rutinas: Ver tus rutinas, crear nuevas, explicarte cómo hacerlo
+✅ Progreso: Consultar tus estadísticas, entrenamientos y gráficas
+✅ Ejercicios: Buscar ejercicios por grupo muscular
+✅ Navegación: Llevarte a cualquier sección de AngaX
+✅ Guías: Explicarte paso a paso cómo usar las funciones
+✅ Consejos: Tips aleatorios sobre entrenamiento, nutrición, técnica y más
 
-**Preguntas que puedes hacerme:**
+Preguntas que puedes hacerme:
 • "¿Cómo creo mi rutina?"
 • "Muéstrame mi progreso"
 • "¿Qué ejercicios hay?"
 • "Llévame a rutinas"
+• "Dame un consejo de entrenamiento"
 
 ¿Qué necesitas? 🤔`
   }
@@ -111,10 +226,10 @@ Puedo ayudarte con:
   if ((normalized.includes('cómo') || normalized.includes('como')) && 
       (normalized.includes('comenzar') || normalized.includes('empezar') || normalized.includes('iniciar'))) {
     if (!currentUser) {
-      return `🚀 **Para comenzar en AngaX:**
+      return `🚀 Para comenzar en AngaX:
 
-**Paso 1:** Inicia sesión o crea una cuenta
-**Paso 2:** Una vez dentro, puedes:
+Paso 1: Inicia sesión o crea una cuenta
+Paso 2: Una vez dentro, puedes:
    • Crear tu primera rutina
    • Ver ejercicios disponibles
    • Explorar la comunidad
@@ -122,18 +237,18 @@ Puedo ayudarte con:
 ¿Quieres que te lleve al login?`
     }
     
-    return `🚀 **¡Bienvenido a AngaX!** Aquí te explico cómo comenzar:
+    return `🚀 ¡Bienvenido a AngaX! Aquí te explico cómo comenzar:
 
-**1. Crea tu primera rutina:**
+1. Crea tu primera rutina:
    • Ve a "Rutinas" → "Crear rutina"
    • Elige ejercicios y configura series/repeticiones
    • Guarda y empieza a entrenar
 
-**2. Registra tus entrenamientos:**
+2. Registra tus entrenamientos:
    • Completa una rutina para guardar tu progreso
    • Ve a "Progreso" para ver tus estadísticas
 
-**3. Explora la comunidad:**
+3. Explora la comunidad:
    • Comparte tus logros
    • Motiva a otros usuarios
 
@@ -155,11 +270,11 @@ Puedo ayudarte con:
 
 ¿Quieres crear tu primera rutina? Te explico cómo:
 
-**1.** Ve a "Rutinas" en el menú
-**2.** Haz clic en "Crear rutina"
-**3.** Completa nombre y objetivo
-**4.** Selecciona ejercicios y configura series/repeticiones
-**5.** Guarda y ¡listo!
+1. Ve a "Rutinas" en el menú
+2. Haz clic en "Crear rutina"
+3. Completa nombre y objetivo
+4. Selecciona ejercicios y configura series/repeticiones
+5. Guarda y ¡listo!
 
 ¿Quieres que te lleve a crear una ahora? 💪`
       }
@@ -167,7 +282,7 @@ Puedo ayudarte con:
       const routinesList = routines.slice(0, 5).map(r => `• ${r.routineName}${r.goal ? ` (${r.goal})` : ''}`).join('\n')
       const moreText = routines.length > 5 ? `\n\n... y ${routines.length - 5} más.` : ''
       
-      return `📋 **Tus rutinas** (${routines.length}):\n\n${routinesList}${moreText}\n\n¿Quieres ver alguna en detalle, crear una nueva o necesitas ayuda con algo más?`
+      return `📋 Tus rutinas (${routines.length}):\n\n${routinesList}${moreText}\n\n¿Quieres ver alguna en detalle, crear una nueva o necesitas ayuda con algo más?`
     } catch (error) {
       return 'No pude cargar tus rutinas en este momento. Intenta más tarde o ve directamente a la sección "Rutinas".'
     }
@@ -248,26 +363,26 @@ Puedo ayudarte con:
       return 'Para crear una rutina, primero necesitas iniciar sesión. Una vez dentro, te explico paso a paso cómo hacerlo.'
     }
     
-    return `📝 **Cómo crear tu rutina en AngaX:**
+    return `📝 Cómo crear tu rutina en AngaX:
 
-**Paso 1:** Ve a la sección "Rutinas" (menú superior)
+Paso 1: Ve a la sección "Rutinas" (menú superior)
 
-**Paso 2:** Haz clic en "Crear rutina"
+Paso 2: Haz clic en "Crear rutina"
 
-**Paso 3:** Completa los datos:
+Paso 3: Completa los datos:
    • Nombre de la rutina (ej: "Piernas y glúteos")
    • Objetivo (fuerza, resistencia, hipertrofia, etc.)
 
-**Paso 4:** Selecciona los ejercicios:
+Paso 4: Selecciona los ejercicios:
    • Elige el grupo muscular (pecho, piernas, brazos, etc.)
    • Haz clic en los ejercicios que quieras incluir
 
-**Paso 5:** Configura cada ejercicio:
+Paso 5: Configura cada ejercicio:
    • Series: cuántas veces harás el ejercicio
    • Repeticiones: cuántas repeticiones por serie
    • Peso (opcional): la carga que usarás
 
-**Paso 6:** Guarda tu rutina
+Paso 6: Guarda tu rutina
 
 ¿Quieres que te lleve a crear una ahora? 💪`
   }
@@ -290,13 +405,27 @@ Puedo ayudarte con:
     return 'Te llevo a tu progreso donde puedes ver gráficas de peso, repeticiones y volumen. 📈'
   }
   
+  // Más consejos (cuando piden otro después de uno)
+  if ((normalized.includes('otro') || normalized.includes('más') || normalized.includes('otra') || normalized.includes('siguiente')) && 
+      (normalized.includes('consejo') || normalized.includes('tip') || normalized.includes('recomendación'))) {
+    return getRandomTip() + '\n\n💪 ¿Quieres más consejos? Solo pregunta "dame otro consejo".'
+  }
+  
   // Despedida
   if (normalized.match(/^(adiós|chao|bye|hasta luego|nos vemos|gracias)/)) {
-    return '¡De nada! Si necesitas algo más, aquí estaré. 💪'
+    return '¡De nada! Si necesitas algo más, aquí estaré. Recuerda que puedo ayudarte con rutinas, progreso, ejercicios y también darte consejos de entrenamiento. 💪'
   }
   
   // Respuesta por defecto
-  return 'Entiendo. Puedo ayudarte con rutinas, progreso, ejercicios o navegación. ¿Qué necesitas específicamente?'
+  return `Entiendo. Puedo ayudarte con:
+
+✅ Rutinas y entrenamientos
+✅ Seguimiento de progreso
+✅ Información de ejercicios
+✅ Navegación por AngaX
+✅ Consejos y tips aleatorios sobre entrenamiento
+
+¿Qué necesitas específicamente? También puedes pedirme un consejo escribiendo "dame un consejo" o "tip de entrenamiento". 💪`
 }
 
 // Función para reemplazar emojis por Material Icons
@@ -315,11 +444,35 @@ const replaceEmojisWithIcons = (text) => {
     '📋': 'list',
     '📈': 'trending_up',
     '💬': 'forum',
+    '🔥': 'local_fire_department',
+    '⏱️': 'timer',
+    '🧘': 'self_improvement',
+    '💧': 'water_drop',
+    '🛌': 'bed',
+    '🎯': 'track_changes',
+    '🏋️': 'sports_gymnastics',
+    '🔄': 'autorenew',
+    '⏸️': 'pause',
+    '🌡️': 'thermostat',
+    '🥗': 'lunch_dining',
+    '🚫': 'block',
+    '📱': 'smartphone',
+    '🎵': 'music_note',
+    '🤝': 'handshake',
+    '🧠': 'psychology',
+    '⚡': 'bolt',
+    '🏃': 'directions_run',
+    '🎨': 'palette',
+    '📏': 'straighten',
+    '🌙': 'nights_stay',
+    '💊': 'medication',
+    '📸': 'camera_alt',
+    '🏆': 'emoji_events',
   }
   
   let result = []
   let lastIndex = 0
-  const emojiRegex = /👋|💪|📊|📝|✅|🚀|💡|🤔|👉|👥|📋|📈|💬/g
+  const emojiRegex = /👋|💪|📊|📝|✅|🚀|💡|🤔|👉|👥|📋|📈|💬|🔥|⏱️|🧘|💧|🛌|🎯|🏋️|🔄|⏸️|🌡️|🥗|🚫|📱|🎵|🤝|🧠|⚡|🏃|🎨|📏|🌙|💊|📸|🏆/g
   let match
   
   while ((match = emojiRegex.exec(text)) !== null) {
@@ -1146,7 +1299,7 @@ function App() {
       </footer>
 
       <div className={`auth-modal ${authModalOpen ? 'open' : ''}`}>
-        <div className="auth-modal__backdrop" onClick={closeAuthModal} />
+        <div className="auth-modal__backdrop" />
         <div className="auth-modal__content">
           <button className="auth-modal__close" type="button" onClick={closeAuthModal}>
             ×
@@ -2357,7 +2510,7 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
   if (currentUser.role !== 'trainer') {
     const trainerRoutinesPortal = showTrainerRoutinesModal && myTrainer ? createPortal(
       <div className="auth-modal open" role="dialog" aria-modal="true" aria-label="Rutinas de mi entrenador">
-        <div className="auth-modal__backdrop" onClick={() => setShowTrainerRoutinesModal(false)} />
+        <div className="auth-modal__backdrop" />
         <div className="auth-modal__content" style={{ width: 'min(900px, 92%)' }}>
           <button
             type="button"
@@ -3348,22 +3501,24 @@ function LandingContent({ metrics, focusAreas, roadmap, goToSection, onProgramsC
                     style={{
                       width: '100%',
                       padding: '14px 16px',
-                      border: '1px solid rgba(0, 77, 152, 0.2)',
+                      border: '1px solid rgba(251, 191, 36, 0.3)',
                       borderRadius: '8px',
                       fontSize: '16px',
                       fontFamily: 'Inter, sans-serif',
-                      backgroundColor: '#ffffff',
-                      transition: 'border-color 0.3s ease'
+                      backgroundColor: '#1a1a1a',
+                      color: '#fbbf24',
+                      transition: 'border-color 0.3s ease',
+                      cursor: 'pointer'
                     }}
                     onFocus={(e) => e.target.style.borderColor = 'var(--color-primary)'}
-                    onBlur={(e) => e.target.style.borderColor = 'rgba(0, 77, 152, 0.2)'}
+                    onBlur={(e) => e.target.style.borderColor = 'rgba(251, 191, 36, 0.3)'}
                   >
-                    <option value="">Selecciona un área</option>
-                    <option value="desarrollo">Desarrollo</option>
-                    <option value="diseño">Diseño</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="fitness">Fitness y Entrenamiento</option>
-                    <option value="otro">Otro</option>
+                    <option value="" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Selecciona un área</option>
+                    <option value="desarrollo" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Desarrollo</option>
+                    <option value="diseño" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Diseño</option>
+                    <option value="marketing" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Marketing</option>
+                    <option value="fitness" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Fitness y Entrenamiento</option>
+                    <option value="otro" style={{ background: '#1a1a1a', color: '#fbbf24' }}>Otro</option>
                   </select>
                 </label>
                 <label>
@@ -3423,6 +3578,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
   const [trainingMeta, setTrainingMeta] = useState({ performed_at: new Date().toISOString() })
   const [routineDays, setRoutineDays] = useState([{ id: 1, name: 'Día 1', exercises: [] }])
   const [selectedExerciseDetail, setSelectedExerciseDetail] = useState(null)
+  const [exercisePage, setExercisePage] = useState(1)
 
   const categories = ['abdomen', 'brazos', 'espalda', 'gluteos', 'hombro', 'pecho', 'piernas']
   const categoryNames = {
@@ -3557,6 +3713,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       title.style.fontSize = '42px'
       title.style.fontWeight = '700'
       title.style.lineHeight = '1.2'
+      title.style.color = '#000000'
       
       const goal = document.createElement('p')
       goal.textContent = routine.goal || 'Sin objetivo definido'
@@ -3564,6 +3721,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       goal.style.fontSize = '22px'
       goal.style.opacity = '0.9'
       goal.style.lineHeight = '1.4'
+      goal.style.color = '#000000'
       
       header.appendChild(title)
       header.appendChild(goal)
@@ -3764,6 +3922,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       title.style.fontSize = '42px'
       title.style.fontWeight = '700'
       title.style.lineHeight = '1.2'
+      title.style.color = '#000000'
       
       const goal = document.createElement('p')
       if (routineName) {
@@ -3775,6 +3934,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       goal.style.fontSize = '22px'
       goal.style.opacity = '0.9'
       goal.style.lineHeight = '1.4'
+      goal.style.color = '#000000'
       
       header.appendChild(title)
       header.appendChild(goal)
@@ -4025,11 +4185,31 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       reps: 10,
       weight: null,
     }
-    setSelectedExercises((prev) => [...prev, newExercise])
+    setSelectedExercises((prev) => {
+      const newExercises = [...prev, newExercise]
+      // Calcular la última página y mover allí
+      const exercisesPerPage = 3
+      const totalPages = Math.ceil(newExercises.length / exercisesPerPage)
+      setExercisePage(totalPages)
+      return newExercises
+    })
   }
 
   const handleRemoveExercise = (exerciseId) => {
-    setSelectedExercises((prev) => prev.filter((ex) => ex.id !== exerciseId))
+    setSelectedExercises((prev) => {
+      const newExercises = prev.filter((ex) => ex.id !== exerciseId)
+      // Ajustar la página si es necesario
+      const exercisesPerPage = 3
+      const maxPage = Math.max(1, Math.ceil(newExercises.length / exercisesPerPage))
+      if (exercisePage > maxPage) {
+        setExercisePage(maxPage)
+      }
+      return newExercises
+    })
+    // Cerrar el detalle si estaba abierto
+    if (selectedExerciseDetail?.id === exerciseId) {
+      setSelectedExerciseDetail(null)
+    }
   }
 
   const handleExerciseChange = (exerciseId, field, value) => {
@@ -4124,6 +4304,8 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
         goal: '',
       })
       setSelectedExercises([])
+      setExercisePage(1)
+      setSelectedExerciseDetail(null)
       setRoutineStatus('Rutina guardada ✨')
       fetchRoutines()
       setTimeout(() => {
@@ -4260,82 +4442,153 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
                   <div className="routine-activities-section">
                     <div className="routine-activities-header">
                       <h3>Actividades</h3>
+                      {selectedExercises.length > 0 && (
+                        <span className="activities-count" style={{ fontSize: '14px', color: '#fbbf24', marginLeft: '10px' }}>
+                          {selectedExercises.length} {selectedExercises.length === 1 ? 'ejercicio' : 'ejercicios'}
+                        </span>
+                      )}
                     </div>
                     <div className="routine-activities-list">
                       {selectedExercises.length === 0 ? (
                         <p className="no-activities">No hay actividades seleccionadas</p>
-                      ) : (
-                        selectedExercises.map((exercise) => (
-                          <div key={exercise.id} className="routine-activity-item">
-                            <div 
-                              className="activity-main"
-                              onClick={() => {
-                                setSelectedExerciseDetail(selectedExerciseDetail?.id === exercise.id ? null : exercise)
-                              }}
-                            >
-                              <div className="activity-icon">
-                                <img src={exercise.imagePath} alt={exercise.exerciseName} />
-                              </div>
-                              <div className="activity-info">
-                                <span className="activity-name">{exercise.exerciseName}</span>
-                                <span className="activity-sets">{exercise.sets} series</span>
-                              </div>
-                              <button
-                                type="button"
-                                className="btn-remove-activity"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleRemoveExercise(exercise.id)
-                                  if (selectedExerciseDetail?.id === exercise.id) {
-                                    setSelectedExerciseDetail(null)
-                                  }
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                            {selectedExerciseDetail?.id === exercise.id && (
-                              <div className="activity-details-dropdown">
-                                <div className="activity-details-content">
-                                  <div className="activity-detail-row">
-                                    <label>
-                                      <span>Series</span>
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        value={exercise.sets}
-                                        onChange={(e) => handleExerciseChange(exercise.id, 'sets', e.target.value)}
-                                      />
-                                    </label>
-                                    <label>
-                                      <span>Reps</span>
-                                      <input
-                                        type="number"
-                                        min="1"
-                                        value={exercise.reps}
-                                        onChange={(e) => handleExerciseChange(exercise.id, 'reps', e.target.value)}
-                                      />
-                                    </label>
-                                    {needsWeight(exercise.exerciseName) && (
-                                      <label>
-                                        <span>Peso (kg)</span>
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          step="0.5"
-                                          value={exercise.weight || ''}
-                                          onChange={(e) => handleExerciseChange(exercise.id, 'weight', e.target.value)}
-                                          placeholder="0"
-                                        />
-                                      </label>
-                                    )}
+                      ) : (() => {
+                        const exercisesPerPage = 3
+                        const totalPages = Math.ceil(selectedExercises.length / exercisesPerPage)
+                        const startIndex = (exercisePage - 1) * exercisesPerPage
+                        const endIndex = startIndex + exercisesPerPage
+                        const currentExercises = selectedExercises.slice(startIndex, endIndex)
+
+                        return (
+                          <>
+                            {currentExercises.map((exercise) => (
+                              <div key={exercise.id} className="routine-activity-item">
+                                <div 
+                                  className="activity-main"
+                                  onClick={() => {
+                                    setSelectedExerciseDetail(selectedExerciseDetail?.id === exercise.id ? null : exercise)
+                                  }}
+                                >
+                                  <div className="activity-icon">
+                                    <img src={exercise.imagePath} alt={exercise.exerciseName} />
                                   </div>
+                                  <div className="activity-info">
+                                    <span className="activity-name">{exercise.exerciseName}</span>
+                                    <span className="activity-sets">{exercise.sets} series</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="btn-remove-activity"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleRemoveExercise(exercise.id)
+                                    }}
+                                  >
+                                    ×
+                                  </button>
                                 </div>
+                                {selectedExerciseDetail?.id === exercise.id && (
+                                  <div className="activity-details-dropdown">
+                                    <div className="activity-details-content">
+                                      <div className="activity-detail-row">
+                                        <label>
+                                          <span>Series</span>
+                                          <input
+                                            type="number"
+                                            min="1"
+                                            value={exercise.sets}
+                                            onChange={(e) => handleExerciseChange(exercise.id, 'sets', e.target.value)}
+                                          />
+                                        </label>
+                                        <label>
+                                          <span>Reps</span>
+                                          <input
+                                            type="number"
+                                            min="1"
+                                            value={exercise.reps}
+                                            onChange={(e) => handleExerciseChange(exercise.id, 'reps', e.target.value)}
+                                          />
+                                        </label>
+                                        {needsWeight(exercise.exerciseName) && (
+                                          <label>
+                                            <span>Peso (kg)</span>
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              step="0.5"
+                                              value={exercise.weight || ''}
+                                              onChange={(e) => handleExerciseChange(exercise.id, 'weight', e.target.value)}
+                                              placeholder="0"
+                                            />
+                                          </label>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {totalPages > 1 && (
+                              <div className="activities-pagination" style={{ 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                marginTop: '20px',
+                                padding: '15px',
+                                background: '#1a202c',
+                                borderRadius: '8px'
+                              }}>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setExercisePage(prev => Math.max(1, prev - 1))
+                                    setSelectedExerciseDetail(null)
+                                  }}
+                                  disabled={exercisePage === 1}
+                                  style={{
+                                    padding: '8px 16px',
+                                    background: exercisePage === 1 ? '#2d3748' : '#fbbf24',
+                                    color: exercisePage === 1 ? '#718096' : '#000',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: exercisePage === 1 ? 'not-allowed' : 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '14px'
+                                  }}
+                                >
+                                  ← Anterior
+                                </button>
+                                <span style={{ 
+                                  color: '#fbbf24', 
+                                  fontWeight: '600',
+                                  fontSize: '14px'
+                                }}>
+                                  Página {exercisePage} de {totalPages}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setExercisePage(prev => Math.min(totalPages, prev + 1))
+                                    setSelectedExerciseDetail(null)
+                                  }}
+                                  disabled={exercisePage === totalPages}
+                                  style={{
+                                    padding: '8px 16px',
+                                    background: exercisePage === totalPages ? '#2d3748' : '#fbbf24',
+                                    color: exercisePage === totalPages ? '#718096' : '#000',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    cursor: exercisePage === totalPages ? 'not-allowed' : 'pointer',
+                                    fontWeight: '600',
+                                    fontSize: '14px'
+                                  }}
+                                >
+                                  Siguiente →
+                                </button>
                               </div>
                             )}
-                          </div>
-                        ))
-                      )}
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -4584,7 +4837,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       </section>
 
       <div className={`auth-modal ${trainingOpen ? 'open' : ''}`}>
-      <div className="auth-modal__backdrop" onClick={closeTraining} />
+      <div className="auth-modal__backdrop" />
       <div className="auth-modal__content">
         <button className="auth-modal__close" type="button" onClick={closeTraining}>
           ×
