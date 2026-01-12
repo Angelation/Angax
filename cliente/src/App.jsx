@@ -2535,7 +2535,35 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
                 <p style={{ color: '#a3a3a3' }}>Tu entrenador aún no ha creado rutinas para ti.</p>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '60vh', overflowY: 'auto', paddingRight: '8px' }}>
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '16px', 
+                  maxHeight: '60vh', 
+                  overflowY: 'auto', 
+                  paddingRight: '8px',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#4a5568 #1a202c'
+                }}
+                className="trainer-routines-scroll"
+              >
+                <style>{`
+                  .trainer-routines-scroll::-webkit-scrollbar {
+                    width: 8px;
+                  }
+                  .trainer-routines-scroll::-webkit-scrollbar-track {
+                    background: #1a202c;
+                    border-radius: 4px;
+                  }
+                  .trainer-routines-scroll::-webkit-scrollbar-thumb {
+                    background: #4a5568;
+                    border-radius: 4px;
+                  }
+                  .trainer-routines-scroll::-webkit-scrollbar-thumb:hover {
+                    background: #718096;
+                  }
+                `}</style>
                 {trainerRoutines.map((routine) => (
                   <div
                     key={routine.routineID}
@@ -2634,6 +2662,37 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
                         </div>
                       </div>
                     )}
+                    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          openTraining(routine)
+                          setShowTrainerRoutinesModal(false)
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '12px 24px',
+                          background: '#fbbf24',
+                          color: '#000000',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '16px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = '#f59e0b'
+                          e.target.style.transform = 'translateY(-2px)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = '#fbbf24'
+                          e.target.style.transform = 'translateY(0)'
+                        }}
+                      >
+                        Iniciar entrenamiento
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -3668,15 +3727,24 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
   }
 
   const openTraining = (routine) => {
-    const normalized = (routine.exercises || []).map((ex) => ({
-      exerciseID: ex.exerciseID,
-      exerciseName: ex.exerciseName,
-      muscleGroup: ex.muscleGroup,
-      imagePath: getExerciseImagePath(ex.exerciseName, ex.muscleGroup),
-      sets: ex.pivot?.sets ?? ex.sets ?? 0,
-      reps: ex.pivot?.reps ?? ex.reps ?? 0,
-      weight: ex.pivot?.weight ?? ex.weight ?? null,
-    }))
+    const normalized = (routine.exercises || []).map((ex) => {
+      const numSets = ex.pivot?.sets ?? ex.sets ?? 0
+      const defaultReps = ex.pivot?.reps ?? ex.reps ?? 0
+      // Crear un array de series, cada una con su propio reps y peso
+      const series = Array.from({ length: numSets }, () => ({
+        reps: defaultReps,
+        weight: null,
+      }))
+      
+      return {
+        exerciseID: ex.exerciseID,
+        exerciseName: ex.exerciseName,
+        muscleGroup: ex.muscleGroup,
+        imagePath: getExerciseImagePath(ex.exerciseName, ex.muscleGroup),
+        sets: numSets,
+        series: series,
+      }
+    })
     setTrainingRoutine(routine)
     setTrainingExercises(normalized)
     setTrainingMeta({ performed_at: new Date().toISOString() })
@@ -4110,14 +4178,19 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
     setTrainingExercises([])
   }
 
-  const updateTrainingExercise = (exerciseID, field, value) => {
+  const updateTrainingExercise = (exerciseID, setIndex, field, value) => {
     setTrainingExercises((prev) =>
       prev.map((ex) => {
         if (ex.exerciseID !== exerciseID) return ex
-        if (field === 'weight') {
-          return { ...ex, weight: value === '' ? null : Number(value) }
+        const updatedSeries = [...(ex.series || [])]
+        if (updatedSeries[setIndex]) {
+          if (field === 'weight') {
+            updatedSeries[setIndex] = { ...updatedSeries[setIndex], weight: value === '' ? null : parseFloat(value) || null }
+          } else if (field === 'reps') {
+            updatedSeries[setIndex] = { ...updatedSeries[setIndex], reps: value === '' ? 0 : parseInt(value, 10) || 0 }
+          }
         }
-        return { ...ex, [field]: value === '' ? 0 : parseInt(value, 10) || 0 }
+        return { ...ex, series: updatedSeries }
       })
     )
   }
@@ -4126,18 +4199,24 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
     if (!ensureAuth() || !trainingRoutine) return
     setRoutineStatus('Guardando entrenamiento…')
     try {
+      // Enviar los datos con series individuales
+      const exercisesData = trainingExercises.flatMap((ex) => {
+        const series = ex.series || []
+        return series.map((serie, index) => ({
+          exerciseID: ex.exerciseID,
+          setNumber: index + 1,
+          reps: serie.reps || 0,
+          weight: serie.weight ?? null,
+        }))
+      })
+
       const response = await fetch(`${apiBaseUrl}/routines/${trainingRoutine.routineID}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           user_email: currentUser.email,
           performed_at: trainingMeta.performed_at,
-          exercises: trainingExercises.map((ex) => ({
-            exerciseID: ex.exerciseID,
-            sets: ex.sets,
-            reps: ex.reps,
-            weight: ex.weight ?? null,
-          })),
+          exercises: exercisesData,
         }),
       })
       const data = await response.json()
@@ -4183,7 +4262,6 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       imagePath: exercise.imagePath,
       sets: 3,
       reps: 10,
-      weight: null,
     }
     setSelectedExercises((prev) => {
       const newExercises = [...prev, newExercise]
@@ -4248,7 +4326,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       setRoutineStatus('Agrega al menos un ejercicio a la rutina')
       return
     }
-    // Validar que todos los ejercicios tengan series, reps y peso (si aplica) válidos
+    // Validar que todos los ejercicios tengan series y reps válidos
     for (const exercise of selectedExercises) {
       if (!exercise.sets || exercise.sets <= 0) {
         setRoutineStatus(`El ejercicio "${exercise.exerciseName}" debe tener al menos 1 serie`)
@@ -4257,12 +4335,6 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       if (!exercise.reps || exercise.reps <= 0) {
         setRoutineStatus(`El ejercicio "${exercise.exerciseName}" debe tener al menos 1 repetición`)
         return
-      }
-      if (needsWeight(exercise.exerciseName)) {
-        if (exercise.weight === null || exercise.weight === undefined || exercise.weight <= 0) {
-          setRoutineStatus(`El ejercicio "${exercise.exerciseName}" requiere un peso mayor a 0`)
-          return
-        }
       }
     }
     if (selectedExercises.length === 0) {
@@ -4281,7 +4353,6 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
           imagePath: ex.imagePath,
           sets: ex.sets,
           reps: ex.reps,
-          weight: ex.weight || null,
         })),
       }
       
@@ -4508,19 +4579,6 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
                                             onChange={(e) => handleExerciseChange(exercise.id, 'reps', e.target.value)}
                                           />
                                         </label>
-                                        {needsWeight(exercise.exerciseName) && (
-                                          <label>
-                                            <span>Peso (kg)</span>
-                                            <input
-                                              type="number"
-                                              min="0"
-                                              step="0.5"
-                                              value={exercise.weight || ''}
-                                              onChange={(e) => handleExerciseChange(exercise.id, 'weight', e.target.value)}
-                                              placeholder="0"
-                                            />
-                                          </label>
-                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -4862,68 +4920,85 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
         </div>
 
         <div className="routine-card__exercises" style={{ marginTop: 12 }}>
-          {trainingExercises.map((ex) => (
-            <div key={ex.exerciseID} className="routine-card__exercise" style={{ alignItems: 'flex-start' }}>
-              <div className="routine-card__exercise-image-wrapper">
-                <img src={ex.imagePath} alt={ex.exerciseName} />
-              </div>
-              <div className="routine-card__exercise-info" style={{ width: '100%' }}>
-                <strong>{ex.exerciseName}</strong>
-                <div className="routine-card__exercise-params" style={{ marginTop: 10 }}>
-                  <div style={{ display: 'flex', gap: 12, width: '100%', alignItems: 'flex-start' }}>
-                    <label style={{ margin: 0, flex: '1 1 0', minWidth: 0 }}>
-                      Series
-                      <input
-                        type="number"
-                        min="0"
-                        value={ex.sets}
-                        onChange={(e) => updateTrainingExercise(ex.exerciseID, 'sets', e.target.value)}
-                        style={{ width: '100%', boxSizing: 'border-box' }}
-                        className="routine-exercise-input"
-                      />
-                    </label>
-                    <label style={{ margin: 0, flex: '1 1 0', minWidth: 0 }}>
-                      Reps
-                      <input
-                        type="number"
-                        min="0"
-                        value={ex.reps}
-                        onChange={(e) => updateTrainingExercise(ex.exerciseID, 'reps', e.target.value)}
-                        style={{ width: '100%', boxSizing: 'border-box' }}
-                        className="routine-exercise-input"
-                      />
-                    </label>
-                    {(() => {
-                      const exerciseNameLower = (ex.exerciseName || '').toLowerCase()
-                      const usesWeight = !exerciseNameLower.includes('flexion') && 
-                                        !exerciseNameLower.includes('push up') && 
-                                        !exerciseNameLower.includes('pull up') &&
-                                        !exerciseNameLower.includes('dominada') &&
-                                        !exerciseNameLower.includes('sentadilla') &&
-                                        !exerciseNameLower.includes('squat') &&
-                                        !exerciseNameLower.includes('abdominal') &&
-                                        !exerciseNameLower.includes('crunch') &&
-                                        !exerciseNameLower.includes('plank')
-                      return usesWeight ? (
-                        <label style={{ margin: 0, flex: '0 0 180px', minWidth: 0 }}>
-                          Peso (kg)
+          {trainingExercises.map((ex) => {
+            const exerciseNameLower = (ex.exerciseName || '').toLowerCase()
+            const usesWeight = !exerciseNameLower.includes('flexion') && 
+                              !exerciseNameLower.includes('push up') && 
+                              !exerciseNameLower.includes('pull up') &&
+                              !exerciseNameLower.includes('dominada') &&
+                              !exerciseNameLower.includes('sentadilla') &&
+                              !exerciseNameLower.includes('squat') &&
+                              !exerciseNameLower.includes('abdominal') &&
+                              !exerciseNameLower.includes('crunch') &&
+                              !exerciseNameLower.includes('plank')
+            const series = ex.series || Array.from({ length: ex.sets || 0 }, () => ({ reps: 0, weight: null }))
+            
+            return (
+              <div key={ex.exerciseID} className="routine-card__exercise" style={{ alignItems: 'flex-start', marginBottom: '20px' }}>
+                <div className="routine-card__exercise-image-wrapper">
+                  <img src={ex.imagePath} alt={ex.exerciseName} />
+                </div>
+                <div className="routine-card__exercise-info" style={{ width: '100%' }}>
+                  <strong style={{ fontSize: '16px', marginBottom: '12px', display: 'block' }}>{ex.exerciseName}</strong>
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ marginBottom: '8px', color: '#a3a3a3', fontSize: '12px', fontWeight: '600' }}>
+                      {ex.sets} {ex.sets === 1 ? 'serie' : 'series'} (bloqueadas)
+                    </div>
+                    {series.map((serie, index) => (
+                      <div key={index} style={{ 
+                        display: 'flex', 
+                        gap: 12, 
+                        width: '100%', 
+                        alignItems: 'flex-start',
+                        marginBottom: '10px',
+                        padding: '10px',
+                        background: '#1a1a1a',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(251, 191, 36, 0.1)'
+                      }}>
+                        <div style={{ 
+                          minWidth: '80px', 
+                          color: '#fbbf24', 
+                          fontWeight: '600', 
+                          display: 'flex', 
+                          alignItems: 'center',
+                          fontSize: '14px'
+                        }}>
+                          Serie {index + 1}
+                        </div>
+                        <label style={{ margin: 0, flex: '1 1 0', minWidth: 0 }}>
+                          <span style={{ fontSize: '12px', color: '#a3a3a3', display: 'block', marginBottom: '4px' }}>Reps</span>
                           <input
                             type="number"
                             min="0"
-                            step="0.5"
-                            value={ex.weight ?? ''}
-                            onChange={(e) => updateTrainingExercise(ex.exerciseID, 'weight', e.target.value)}
+                            value={serie.reps || ''}
+                            onChange={(e) => updateTrainingExercise(ex.exerciseID, index, 'reps', e.target.value)}
                             style={{ width: '100%', boxSizing: 'border-box' }}
                             className="routine-exercise-input"
                           />
                         </label>
-                      ) : null
-                    })()}
+                        {usesWeight && (
+                          <label style={{ margin: 0, flex: '1 1 0', minWidth: 0 }}>
+                            <span style={{ fontSize: '12px', color: '#a3a3a3', display: 'block', marginBottom: '4px' }}>Peso (kg)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.5"
+                              value={serie.weight ?? ''}
+                              onChange={(e) => updateTrainingExercise(ex.exerciseID, index, 'weight', e.target.value)}
+                              style={{ width: '100%', boxSizing: 'border-box' }}
+                              className="routine-exercise-input"
+                              placeholder="0"
+                            />
+                          </label>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="community__composer-actions" style={{ marginTop: 18 }}>

@@ -239,7 +239,7 @@ class RoutineController extends Controller
             'performed_at' => ['nullable', 'date'],
             'exercises' => ['nullable', 'array'],
             'exercises.*.exerciseID' => ['required_with:exercises', 'integer', 'exists:exercises,exerciseID'],
-            'exercises.*.sets' => ['nullable', 'integer', 'min:0'],
+            'exercises.*.setNumber' => ['nullable', 'integer', 'min:1'],
             'exercises.*.reps' => ['nullable', 'integer', 'min:0'],
             'exercises.*.weight' => ['nullable', 'numeric', 'min:0'],
         ]);
@@ -284,47 +284,65 @@ class RoutineController extends Controller
             Log::info('Completación creada:', ['completionID' => $completion, 'routineID' => $routine->routineID, 'userID' => $user->userID]);
 
             $allowedExerciseIds = $routine->exercises->map(fn ($ex) => (int) $ex->exerciseID)->flip();
-            $inputByExerciseId = collect($data['exercises'] ?? [])
-                ->filter(fn ($row) => isset($row['exerciseID']) && $allowedExerciseIds->has((int) $row['exerciseID']))
-                ->keyBy(fn ($row) => (int) $row['exerciseID']);
+            $exercisesData = collect($data['exercises'] ?? [])
+                ->filter(fn ($row) => isset($row['exerciseID']) && $allowedExerciseIds->has((int) $row['exerciseID']));
 
             $exercisesCount = 0;
-            foreach ($routine->exercises as $exercise) {
+            $setsCount = 0;
+            
+            // Agrupar por ejercicio para contar series
+            $exercisesByID = [];
+            foreach ($exercisesData as $row) {
+                $exerciseID = (int) $row['exerciseID'];
+                if (!isset($exercisesByID[$exerciseID])) {
+                    $exercisesByID[$exerciseID] = [];
+                }
+                $exercisesByID[$exerciseID][] = $row;
+            }
+            
+            // Guardar cada serie individualmente
+            foreach ($exercisesByID as $exerciseID => $seriesData) {
                 try {
-                    $input = $inputByExerciseId->get((int) $exercise->exerciseID, []);
-                    $sets = array_key_exists('sets', $input) ? (int) $input['sets'] : (int) ($exercise->pivot->sets ?? 0);
-                    $reps = array_key_exists('reps', $input) ? (int) $input['reps'] : (int) ($exercise->pivot->reps ?? 0);
-                    $weight = array_key_exists('weight', $input) ? $input['weight'] : ($exercise->pivot->weight ?? null);
+                    $exercise = $routine->exercises->firstWhere('exerciseID', $exerciseID);
+                    if (!$exercise) continue;
+                    
+                    // Guardar cada serie como un registro individual
+                    foreach ($seriesData as $serieData) {
+                        $reps = isset($serieData['reps']) ? (int) $serieData['reps'] : (int) ($exercise->pivot->reps ?? 0);
+                        $weight = isset($serieData['weight']) ? ($serieData['weight'] !== null ? (float) $serieData['weight'] : null) : null;
+                        $setNumber = isset($serieData['setNumber']) ? (int) $serieData['setNumber'] : 1;
 
-                    DB::table('routine_completion_exercises')->insert([
-                        'completionID' => $completion,
-                        'exerciseID' => $exercise->exerciseID,
-                        'sets' => $sets,
-                        'reps' => $reps,
-                        'weight' => $weight,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+                        DB::table('routine_completion_exercises')->insert([
+                            'completionID' => $completion,
+                            'exerciseID' => $exerciseID,
+                            'sets' => 1, // Cada registro representa 1 serie
+                            'reps' => $reps,
+                            'weight' => $weight,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        $setsCount++;
+                        
+                        Log::info('Serie guardada:', [
+                            'completionID' => $completion,
+                            'exerciseID' => $exerciseID,
+                            'setNumber' => $setNumber,
+                            'reps' => $reps,
+                            'weight' => $weight,
+                        ]);
+                    }
                     $exercisesCount++;
-                    Log::info('Ejercicio guardado:', [
-                        'completionID' => $completion,
-                        'exerciseID' => $exercise->exerciseID,
-                        'exerciseName' => $exercise->exerciseName,
-                        'sets' => $sets,
-                        'reps' => $reps,
-                        'weight' => $weight,
-                    ]);
                 } catch (\Exception $e) {
-                    Log::error('Error al guardar ejercicio:', [
+                    Log::error('Error al guardar serie:', [
                         'completionID' => $completion,
-                        'exerciseID' => $exercise->exerciseID ?? 'N/A',
+                        'exerciseID' => $exerciseID ?? 'N/A',
                         'error' => $e->getMessage(),
                     ]);
                     throw $e;
                 }
             }
 
-            Log::info('Ejercicios guardados:', ['completionID' => $completion, 'count' => $exercisesCount]);
+            Log::info('Ejercicios guardados:', ['completionID' => $completion, 'exercisesCount' => $exercisesCount, 'setsCount' => $setsCount]);
 
             DB::commit();
 
