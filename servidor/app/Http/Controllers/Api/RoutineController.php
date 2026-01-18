@@ -210,6 +210,37 @@ class RoutineController extends Controller
         return response()->json($exercises);
     }
 
+    public function update(Request $request, $id)
+    {
+        $data = $request->validate([
+            'user_email' => ['required', 'email'],
+            'routineName' => ['required', 'string', 'max:100'],
+            'goal' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $user = DB::table('users')->where('email', $data['user_email'])->first();
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+
+        $routine = Routine::where('routineID', $id)
+            ->where('userID', $user->userID)
+            ->where('isActive', true)
+            ->first();
+
+        if (!$routine) {
+            return response()->json(['message' => 'Rutina no encontrada'], 404);
+        }
+
+        $routine->routineName = $data['routineName'];
+        if (isset($data['goal'])) {
+            $routine->goal = $data['goal'];
+        }
+        $routine->save();
+
+        return response()->json($routine);
+    }
+
     public function destroy(Request $request, $id)
     {
         $user = DB::table('users')->where('email', $request->string('user_email'))->first();

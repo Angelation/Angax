@@ -57,14 +57,21 @@ class PostController extends Controller
             $userEmail = null;
 
             $userProfilePhoto = null;
+            $userRole = null;
             if ($userID) {
                 $user = User::find($userID);
                 $userName = $user->name ?? 'Usuario';
                 $userEmail = $user->email ?? '';
                 $userProfilePhoto = $user->profilePhoto ? Storage::url($user->profilePhoto) : null;
+                $userRole = $user->role ?? null;
             } else {
                 $userName = $post->user_name ?? 'Usuario';
                 $userEmail = $post->user_email ?? '';
+                // Intentar obtener el rol desde el email si existe
+                if ($userEmail) {
+                    $user = User::where('email', $userEmail)->first();
+                    $userRole = $user->role ?? null;
+                }
             }
 
             $imageUrl = null;
@@ -82,6 +89,7 @@ class PostController extends Controller
                 'user_name' => $userName,
                 'user_email' => $userEmail,
                 'user_profile_photo' => $userProfilePhoto,
+                'user_role' => $userRole,
                 'content' => $post->content,
                 'image_url' => $imageUrl,
                 'created_at' => $post->postDate ?? $post->created_at,
@@ -169,14 +177,25 @@ class PostController extends Controller
     public function destroy(Request $request, $postId)
     {
         $validated = $request->validate([
-            'user_email' => ['required', 'email'],
+            'user_email' => ['required_without:admin_email', 'email'],
+            'admin_email' => ['required_without:user_email', 'email'],
         ]);
 
-        $user = User::where('email', $validated['user_email'])->first();
+        $isAdmin = isset($validated['admin_email']);
+        $email = $isAdmin ? $validated['admin_email'] : $validated['user_email'];
+        
+        $user = User::where('email', $email)->first();
         if (!$user) {
             return response()->json([
                 'message' => 'Usuario no encontrado',
             ], 404);
+        }
+
+        // Si es admin, verificar que tenga rol de admin
+        if ($isAdmin && $user->role !== 'admin') {
+            return response()->json([
+                'message' => 'No tienes permisos de administrador',
+            ], 403);
         }
 
         $post = Post::where('postID', $postId)->first();
@@ -186,7 +205,8 @@ class PostController extends Controller
             ], 404);
         }
 
-        if ((int) $post->userID !== (int) $user->userID) {
+        // Si no es admin, verificar que sea el dueño del post
+        if (!$isAdmin && (int) $post->userID !== (int) $user->userID) {
             return response()->json([
                 'message' => 'Solo puedes eliminar tus propias publicaciones.',
             ], 403);

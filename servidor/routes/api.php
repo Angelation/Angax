@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\RoutineController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TrainerController;
 use App\Http\Controllers\Api\WorkoutSessionController;
+use App\Http\Controllers\Api\AdminController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -16,6 +17,7 @@ Route::get('/me', [AuthController::class, 'me']);
 
 Route::get('/routines', [RoutineController::class, 'index']);
 Route::post('/routines', [RoutineController::class, 'store']);
+Route::put('/routines/{id}', [RoutineController::class, 'update']);
 Route::delete('/routines/{id}', [RoutineController::class, 'destroy']);
 Route::post('/routines/{id}/complete', [RoutineController::class, 'complete']);
 Route::get('/exercises', [RoutineController::class, 'getAvailableExercises']);
@@ -52,4 +54,8 @@ Route::post('/trainer/join', [TrainerController::class, 'joinTrainer']);
 Route::post('/trainer/leave', [TrainerController::class, 'leaveTrainer']);
 Route::get('/trainer/student-progress', [TrainerController::class, 'getStudentProgress']);
 Route::get('/trainer/my-routines', [TrainerController::class, 'getTrainerRoutines']);
+
+Route::get('/admin/users', [AdminController::class, 'getUsers']);
+Route::delete('/admin/users/{id}', [AdminController::class, 'deleteUser']);
+Route::delete('/admin/comments/{id}', [AdminController::class, 'deleteComment']);
 

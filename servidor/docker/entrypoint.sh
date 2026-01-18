@@ -122,6 +122,10 @@ if [ "$DB_CONNECTION" = "sqlite" ]; then
 fi
 php artisan migrate --force || echo "Error al ejecutar migraciones, pero continuando..."
 
+# Ejecutar seeders para crear el usuario admin
+echo "Ejecutando seeders (creando usuario admin)..."
+php artisan db:seed --force || echo "Error al ejecutar seeders, pero continuando..."
+
 # Limpiar caché
 echo "Limpiando caché..."
 php artisan config:clear || true

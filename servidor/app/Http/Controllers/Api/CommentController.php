@@ -141,14 +141,25 @@ class CommentController extends Controller
     public function destroy(Request $request, $commentId)
     {
         $validated = $request->validate([
-            'user_email' => 'required|email',
+            'user_email' => ['required_without:admin_email', 'email'],
+            'admin_email' => ['required_without:user_email', 'email'],
         ]);
 
-        $user = User::where('email', $validated['user_email'])->first();
+        $isAdmin = isset($validated['admin_email']);
+        $email = $isAdmin ? $validated['admin_email'] : $validated['user_email'];
+        
+        $user = User::where('email', $email)->first();
         if (!$user) {
             return response()->json([
                 'message' => 'Usuario no encontrado',
             ], 404);
+        }
+
+        // Si es admin, verificar que tenga rol de admin
+        if ($isAdmin && $user->role !== 'admin') {
+            return response()->json([
+                'message' => 'No tienes permisos de administrador',
+            ], 403);
         }
 
         $comment = Comment::where('commentID', $commentId)->first();
@@ -158,7 +169,8 @@ class CommentController extends Controller
             ], 404);
         }
 
-        if ((int) $comment->userID !== (int) $user->userID) {
+        // Si no es admin, verificar que sea el dueño del comentario
+        if (!$isAdmin && (int) $comment->userID !== (int) $user->userID) {
             return response()->json([
                 'message' => 'Solo puedes eliminar tus propios comentarios.',
             ], 403);

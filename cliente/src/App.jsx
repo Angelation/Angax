@@ -98,7 +98,6 @@ const getInitialChatMessage = (isLoggedIn) => ({
 ✅ Gestión de rutinas: Crear, ver y gestionar tus rutinas de entrenamiento
 ✅ Seguimiento de progreso: Consultar tus estadísticas, gráficas y evolución
 ✅ Información de ejercicios: Buscar ejercicios por grupo muscular
-✅ Navegación: Llevarte a cualquier sección de AngaX
 ✅ Guías paso a paso: Explicarte cómo usar todas las funciones
 
 🎯 Preguntas que puedes hacerme:
@@ -152,8 +151,80 @@ const getAvatarStyle = (photoUrl) => {
   }
 }
 
-const buildBotResponse = async (text, currentUser, navigate) => {
+const buildBotResponse = async (text, currentUser, navigate, lastBotMessage = '', openAuthModal = null) => {
   const normalized = text.toLowerCase().trim()
+  const lastBotNormalized = lastBotMessage.toLowerCase()
+  
+  // Manejo de respuestas afirmativas/negativas basado en contexto
+  const isAffirmative = normalized.match(/^(sí|si|yes|ok|okay|vale|claro|por supuesto|dale|vamos|adelante|hazlo|hazlo|dale|venga|sip|yep|por favor|lleva|llevame|muestra|muéstrame|quiero|dame|dame|quiero ver|quiero ir)/)
+  const isNegative = normalized.match(/^(no|nop|nope|nah|tampoco|mejor no|cancelar|cancela)/)
+  
+  // Si el último mensaje del bot mencionaba login y el usuario responde afirmativamente
+  if (isAffirmative && (lastBotNormalized.includes('login') || lastBotNormalized.includes('iniciar sesión') || lastBotNormalized.includes('inicia sesión'))) {
+    if (openAuthModal) {
+      openAuthModal('login')
+    }
+    return 'Te abro el login para que puedas iniciar sesión. 🔐'
+  }
+  
+  // Si el último mensaje del bot mencionaba crear rutina o llevar a rutinas
+  if (isAffirmative && ((lastBotNormalized.includes('crear') && lastBotNormalized.includes('rutina')) || 
+      lastBotNormalized.includes('llevo a crear') || lastBotNormalized.includes('llevo a rutinas') ||
+      lastBotNormalized.includes('llevo a crear una ahora'))) {
+    if (!currentUser) {
+      return 'Para crear una rutina, primero necesitas iniciar sesión.'
+    }
+    navigate('/rutinas')
+    return 'Te llevo a crear una nueva rutina. Si necesitas ayuda con los pasos, solo pregunta "¿cómo creo mi rutina?" 💪'
+  }
+  
+  // Si el último mensaje del bot mencionaba progreso o gráficas
+  if (isAffirmative && (lastBotNormalized.includes('progreso') || lastBotNormalized.includes('gráficas') || 
+      lastBotNormalized.includes('graficas') || lastBotNormalized.includes('gráficas detalladas'))) {
+    if (!currentUser) {
+      return 'Para ver tu progreso, primero necesitas iniciar sesión.'
+    }
+    navigate('/progreso')
+    return 'Te llevo a tu progreso. 📊'
+  }
+  
+  // Si el usuario dice "llevame" o "muéstrame" después de que el bot mencionó progreso
+  if ((normalized.includes('llevame') || normalized.includes('muéstrame') || normalized.includes('muestrame')) && 
+      lastBotNormalized.includes('progreso')) {
+    if (!currentUser) {
+      return 'Para ver tu progreso, primero necesitas iniciar sesión.'
+    }
+    navigate('/progreso')
+    return 'Te llevo a tu progreso. 📊'
+  }
+  
+  // Si el último mensaje del bot mencionaba rutinas y el usuario quiere crear una nueva
+  if (isAffirmative && lastBotNormalized.includes('crear una nueva')) {
+    if (!currentUser) {
+      return 'Para crear una rutina, primero necesitas iniciar sesión.'
+    }
+    navigate('/rutinas')
+    return 'Te llevo a crear una nueva rutina. Si necesitas ayuda con los pasos, solo pregunta "¿cómo creo mi rutina?" 💪'
+  }
+  
+  // Si el último mensaje del bot preguntaba sobre rutinas (ver detalle, crear nueva, etc.)
+  if (lastBotNormalized.includes('qué quieres hacer') || lastBotNormalized.includes('crear rutina') || 
+      lastBotNormalized.includes('ver rutinas') || lastBotNormalized.includes('tus rutinas')) {
+    if (normalized.includes('crear') || (normalized.includes('nueva') && normalized.includes('rutina'))) {
+      if (!currentUser) {
+        return 'Para crear una rutina, primero necesitas iniciar sesión.'
+      }
+      navigate('/rutinas')
+      return 'Te llevo a crear una nueva rutina. Si necesitas ayuda con los pasos, solo pregunta "¿cómo creo mi rutina?" 💪'
+    }
+    if (normalized.includes('ver') && (normalized.includes('rutina') || normalized.includes('detalle'))) {
+      if (!currentUser) {
+        return 'Para ver tus rutinas, primero necesitas iniciar sesión.'
+      }
+      navigate('/rutinas')
+      return 'Te llevo a tus rutinas donde puedes ver todas en detalle. 👉'
+    }
+  }
   
   // Saludos
   if (normalized.match(/^(hola|hi|hey|buenos|buenas|saludos)/)) {
@@ -165,7 +236,6 @@ const buildBotResponse = async (text, currentUser, navigate) => {
 ✅ Rutinas: Crear, ver y gestionar tus rutinas de entrenamiento
 ✅ Progreso: Consultar tus estadísticas y evolución
 ✅ Ejercicios: Buscar ejercicios por grupo muscular
-✅ Navegación: Llevarte a cualquier sección
 ✅ Consejos: Tips aleatorios sobre entrenamiento
 
 🎯 Preguntas que puedes hacerme:
@@ -208,7 +278,6 @@ Puedo ayudarte con:
 ✅ Rutinas: Ver tus rutinas, crear nuevas, explicarte cómo hacerlo
 ✅ Progreso: Consultar tus estadísticas, entrenamientos y gráficas
 ✅ Ejercicios: Buscar ejercicios por grupo muscular
-✅ Navegación: Llevarte a cualquier sección de AngaX
 ✅ Guías: Explicarte paso a paso cómo usar las funciones
 ✅ Consejos: Tips aleatorios sobre entrenamiento, nutrición, técnica y más
 
@@ -216,7 +285,6 @@ Preguntas que puedes hacerme:
 • "¿Cómo creo mi rutina?"
 • "Muéstrame mi progreso"
 • "¿Qué ejercicios hay?"
-• "Llévame a rutinas"
 • "Dame un consejo de entrenamiento"
 
 ¿Qué necesitas? 🤔`
@@ -255,7 +323,48 @@ Paso 2: Una vez dentro, puedes:
 ¿Quieres que te explique cómo crear tu primera rutina paso a paso? 💪`
   }
   
-  // Rutinas
+  // Cómo crear rutina - explicación detallada (ANTES de la condición general de rutina)
+  if ((normalized.includes('cómo') || normalized.includes('como') || normalized.includes('como se')) && 
+      (normalized.includes('crear') || normalized.includes('hacer')) && 
+      (normalized.includes('rutina') || normalized.includes('entrenamiento'))) {
+    if (!currentUser) {
+      return 'Para crear una rutina, primero necesitas iniciar sesión. Una vez dentro, te explico paso a paso cómo hacerlo.'
+    }
+    
+    return `📝 Cómo crear tu rutina en AngaX:
+
+Paso 1: Ve a la sección "Rutinas" (menú superior)
+
+Paso 2: Haz clic en "Crear rutina"
+
+Paso 3: Completa los datos:
+   • Nombre de la rutina (ej: "Piernas y glúteos")
+   • Objetivo (fuerza, resistencia, hipertrofia, etc.)
+
+Paso 4: Selecciona los ejercicios:
+   • Elige el grupo muscular (pecho, piernas, brazos, etc.)
+   • Haz clic en los ejercicios que quieras incluir
+
+Paso 5: Configura cada ejercicio:
+   • Series: cuántas veces harás el ejercicio
+   • Repeticiones: cuántas repeticiones por serie
+   • Peso (opcional): la carga que usarás
+
+Paso 6: Guarda tu rutina
+
+¿Quieres que te lleve a crear una ahora? 💪`
+  }
+  
+  // Crear rutina (comando directo) - ANTES de la condición general de rutina
+  if (normalized.includes('crear') && (normalized.includes('rutina') || normalized.includes('entrenamiento'))) {
+    if (!currentUser) {
+      return 'Para crear una rutina, primero necesitas iniciar sesión.'
+    }
+    navigate('/rutinas')
+    return 'Te llevo a crear una nueva rutina. Si necesitas ayuda con los pasos, solo pregunta "¿cómo creo mi rutina?" 💪'
+  }
+  
+  // Rutinas (condición general - debe ir DESPUÉS de las específicas)
   if (normalized.includes('rutina') || normalized.includes('entrenamiento') || normalized.includes('routine')) {
     if (!currentUser) {
       return 'Para ver tus rutinas, primero necesitas iniciar sesión. ¿Quieres que te lleve al login?'
@@ -282,7 +391,7 @@ Paso 2: Una vez dentro, puedes:
       const routinesList = routines.slice(0, 5).map(r => `• ${r.routineName}${r.goal ? ` (${r.goal})` : ''}`).join('\n')
       const moreText = routines.length > 5 ? `\n\n... y ${routines.length - 5} más.` : ''
       
-      return `📋 Tus rutinas (${routines.length}):\n\n${routinesList}${moreText}\n\n¿Quieres ver alguna en detalle, crear una nueva o necesitas ayuda con algo más?`
+      return `📋 Tus rutinas (${routines.length}):\n\n${routinesList}${moreText}\n\n¿Qué quieres hacer?\n• Di "crear rutina" para crear una nueva\n• Di "ver rutinas" para verlas en detalle\n• Di "ayuda" si necesitas algo más`
     } catch (error) {
       return 'No pude cargar tus rutinas en este momento. Intenta más tarde o ve directamente a la sección "Rutinas".'
     }
@@ -314,7 +423,16 @@ Paso 2: Una vez dentro, puedes:
       
       const lastSession = progress[0]?.completed_at ? new Date(progress[0].completed_at).toLocaleDateString('es-ES') : 'N/A'
       
-      return `📊 Tu progreso:\n\n• Entrenamientos: ${totalSessions}\n• Volumen total: ${Math.round(totalVolume).toLocaleString()} kg\n• Última sesión: ${lastSession}\n\n¿Quieres ver las gráficas detalladas? Te llevo a "Progreso".`
+      // Contar rutinas únicas completadas
+      const completedRoutines = new Set()
+      progress.forEach((session) => {
+        if (session.routineID) {
+          completedRoutines.add(session.routineID)
+        }
+      })
+      const routinesCompleted = completedRoutines.size
+      
+      return `📊 Tu progreso:\n\n• Entrenamientos: ${totalSessions}\n• Rutinas completadas: ${routinesCompleted}\n• Última sesión: ${lastSession}\n\nDi "sí" o "llevame" para ver las gráficas detalladas en la sección de Progreso.`
     } catch (error) {
       return 'No pude cargar tu progreso. Intenta más tarde o ve directamente a la sección "Progreso".'
     }
@@ -355,47 +473,6 @@ Paso 2: Una vez dentro, puedes:
     }
   }
   
-  // Cómo crear rutina - explicación detallada
-  if ((normalized.includes('cómo') || normalized.includes('como') || normalized.includes('como se')) && 
-      (normalized.includes('crear') || normalized.includes('hacer')) && 
-      (normalized.includes('rutina') || normalized.includes('entrenamiento'))) {
-    if (!currentUser) {
-      return 'Para crear una rutina, primero necesitas iniciar sesión. Una vez dentro, te explico paso a paso cómo hacerlo.'
-    }
-    
-    return `📝 Cómo crear tu rutina en AngaX:
-
-Paso 1: Ve a la sección "Rutinas" (menú superior)
-
-Paso 2: Haz clic en "Crear rutina"
-
-Paso 3: Completa los datos:
-   • Nombre de la rutina (ej: "Piernas y glúteos")
-   • Objetivo (fuerza, resistencia, hipertrofia, etc.)
-
-Paso 4: Selecciona los ejercicios:
-   • Elige el grupo muscular (pecho, piernas, brazos, etc.)
-   • Haz clic en los ejercicios que quieras incluir
-
-Paso 5: Configura cada ejercicio:
-   • Series: cuántas veces harás el ejercicio
-   • Repeticiones: cuántas repeticiones por serie
-   • Peso (opcional): la carga que usarás
-
-Paso 6: Guarda tu rutina
-
-¿Quieres que te lleve a crear una ahora? 💪`
-  }
-  
-  // Crear rutina (comando directo)
-  if (normalized.includes('crear') && (normalized.includes('rutina') || normalized.includes('entrenamiento'))) {
-    if (!currentUser) {
-      return 'Para crear una rutina, primero necesitas iniciar sesión.'
-    }
-    navigate('/rutinas')
-    return 'Te llevo a crear una nueva rutina. Si necesitas ayuda con los pasos, solo pregunta "¿cómo creo mi rutina?" 💪'
-  }
-  
   // Peso / fuerza
   if (normalized.includes('peso') || normalized.includes('fuerza') || normalized.includes('carga')) {
     if (!currentUser) {
@@ -417,15 +494,14 @@ Paso 6: Guarda tu rutina
   }
   
   // Respuesta por defecto
-  return `Entiendo. Puedo ayudarte con:
+  return `No estoy seguro de qué necesitas. Puedo ayudarte con:
 
-✅ Rutinas y entrenamientos
-✅ Seguimiento de progreso
-✅ Información de ejercicios
-✅ Navegación por AngaX
-✅ Consejos y tips aleatorios sobre entrenamiento
+✅ Rutinas: crear y gestionar tus entrenamientos
+✅ Progreso: ver tus estadísticas y evolución
+✅ Ejercicios: buscar por grupo muscular
+✅ Consejos: tips aleatorios sobre entrenamiento
 
-¿Qué necesitas específicamente? También puedes pedirme un consejo escribiendo "dame un consejo" o "tip de entrenamiento". 💪`
+¿Qué necesitas? También puedes pedirme un consejo escribiendo "dame un consejo". 💪`
 }
 
 // Función para reemplazar emojis por Material Icons
@@ -729,7 +805,12 @@ function App() {
     }, 150)
     
     try {
-      const response = await buildBotResponse(trimmed, currentUser, navigate)
+      // Obtener el último mensaje del bot para contexto
+      const lastBotMsg = chatMessages
+        .filter(msg => msg.from === 'bot' && !msg.isTyping)
+        .slice(-1)[0]?.text || ''
+      
+      const response = await buildBotResponse(trimmed, currentUser, navigate, lastBotMsg, openAuthModal)
       // Remover el mensaje de "escribiendo..." y agregar la respuesta en una sola operación
       setChatMessages((prev) => {
         const filtered = prev.filter((msg) => msg.id !== typingId)
@@ -1104,27 +1185,49 @@ function App() {
             <div className="site-nav__grid">
               <div className={`site-nav__left collapse navbar-collapse ${navOpen ? 'show' : ''}`} id="mainNav">
                 <ul className="navbar-nav gap-2">
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/rutinas" onClick={closeNav}>
-                      Rutinas
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/progreso" onClick={closeNav}>
-                      Progreso
-                    </Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/comunidad" onClick={closeNav}>
-                      Comunidad
-                    </Link>
-                  </li>
-                  {currentUser && (
-                    <li className="nav-item">
-                      <Link className="nav-link" to="/entrenadores" onClick={closeNav}>
-                        Entrenadores
-                      </Link>
-                    </li>
+                  {currentUser?.role === 'admin' ? (
+                    <>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/" onClick={closeNav}>
+                          Inicio
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/comunidad" onClick={closeNav}>
+                          Comunidad
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/cuentas" onClick={closeNav}>
+                          Cuentas
+                        </Link>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/rutinas" onClick={closeNav}>
+                          Rutinas
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/progreso" onClick={closeNav}>
+                          Progreso
+                        </Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/comunidad" onClick={closeNav}>
+                          Comunidad
+                        </Link>
+                      </li>
+                      {currentUser && (
+                        <li className="nav-item">
+                          <Link className="nav-link" to="/entrenadores" onClick={closeNav}>
+                            Entrenadores
+                          </Link>
+                        </li>
+                      )}
+                    </>
                   )}
                 </ul>
               </div>
@@ -1216,6 +1319,10 @@ function App() {
           <Route
             path="/comunidad"
             element={<CommunityPage currentUser={currentUser} ensureAuth={ensureAuthenticated} />}
+          />
+          <Route
+            path="/cuentas"
+            element={<AdminAccountsPage currentUser={currentUser} userLoaded={userLoaded} ensureAuth={ensureAuthenticated} />}
           />
           <Route
             path="/progreso"
@@ -1729,6 +1836,76 @@ function ProfilePage({ currentUser, userLoaded, ensureAuth, onProfileUpdate }) {
     }
   }
 
+  const handleCopyRoutine = async (routine) => {
+    if (!currentUser) {
+      setStatus('Debes iniciar sesión para copiar rutinas.')
+      setTimeout(() => setStatus(''), 3000)
+      return
+    }
+
+    if (!routine.exercises || routine.exercises.length === 0) {
+      setStatus('Esta rutina no tiene ejercicios para copiar.')
+      setTimeout(() => setStatus(''), 3000)
+      return
+    }
+
+    setStatus('Copiando rutina...')
+    
+    try {
+      // Función auxiliar para obtener la ruta de imagen del ejercicio
+      const getExerciseImagePath = (exerciseName, muscleGroup, imagePath) => {
+        // Si ya viene imagePath del servidor, usarlo
+        if (imagePath) return imagePath
+        // Si no, construir la ruta estándar
+        return `/ejercicios/${muscleGroup}/${exerciseName}.gif`
+      }
+
+      // Preparar los ejercicios para la API
+      const exercises = routine.exercises.map(exercise => ({
+        exerciseName: exercise.name,
+        muscleGroup: exercise.muscleGroup,
+        imagePath: getExerciseImagePath(exercise.name, exercise.muscleGroup, exercise.imagePath),
+        sets: exercise.sets || 3,
+        reps: exercise.reps || 10,
+        weight: exercise.weight || null,
+      }))
+
+      // Crear la rutina copiada con un nombre que indique que es una copia
+      const routineName = `${routine.title} (copiada)`
+      
+      const response = await fetch(`${apiBaseUrl}/routines`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_email: currentUser.email,
+          routineName: routineName,
+          goal: routine.goal || null,
+          exercises: exercises,
+        }),
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo copiar la rutina.')
+      }
+
+      setStatus(`✅ Rutina "${routine.title}" copiada exitosamente. Ya está disponible en tus rutinas.`)
+      setTimeout(() => {
+        setStatus('')
+        // Opcional: redirigir a rutinas después de 2 segundos
+        setTimeout(() => {
+          navigate('/rutinas')
+        }, 2000)
+      }, 3000)
+    } catch (error) {
+      setStatus(error.message || 'Error al copiar la rutina.')
+      setTimeout(() => setStatus(''), 3000)
+    }
+  }
+
   // Verificar si es el perfil del usuario actual
   const urlParams = new URLSearchParams(location.search)
   const userEmail = urlParams.get('user')
@@ -1997,6 +2174,18 @@ function ProfilePage({ currentUser, userLoaded, ensureAuth, onProfileUpdate }) {
 
             {activeProfileTab === 'rutinas' && (
               <div className="profile-gallery">
+                {status && !editing && (
+                  <div className="profile-status-message" style={{
+                    padding: '12px 16px',
+                    marginBottom: '16px',
+                    borderRadius: '8px',
+                    backgroundColor: status.includes('✅') || status.includes('exitosamente') ? '#d4edda' : '#f8d7da',
+                    color: status.includes('✅') || status.includes('exitosamente') ? '#155724' : '#721c24',
+                    border: `1px solid ${status.includes('✅') || status.includes('exitosamente') ? '#c3e6cb' : '#f5c6cb'}`,
+                  }}>
+                    {replaceEmojisWithIcons(status)}
+                  </div>
+                )}
                 {programs.length === 0 ? (
                   <div className="profile-gallery__empty">
                     <p>No has creado rutinas aún.</p>
@@ -2010,41 +2199,73 @@ function ProfilePage({ currentUser, userLoaded, ensureAuth, onProfileUpdate }) {
                       const isExpanded = expandedRoutines[routine.id]
                       return (
                         <article key={routine.id} className="profile-gallery__card">
-                          <div
-                            className="profile-routine__header"
-                            onClick={() =>
-                              setExpandedRoutines((prev) => ({
-                                ...prev,
-                                [routine.id]: !prev[routine.id],
-                              }))
-                            }
-                          >
-                            <div className="profile-routine__info">
-                              <strong>{routine.title}</strong>
-                              <small>{routine.exercises_count || 0} ejercicios</small>
-                              <p>{routine.goal || 'Sin objetivo definido.'}</p>
-                            </div>
-                            <button
-                              type="button"
-                              className={`profile-routine__toggle ${isExpanded ? 'expanded' : ''}`}
-                              aria-label={isExpanded ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                          <div className="profile-routine__header-wrapper">
+                            <div
+                              className="profile-routine__header"
+                              onClick={() =>
+                                setExpandedRoutines((prev) => ({
+                                  ...prev,
+                                  [routine.id]: !prev[routine.id],
+                                }))
+                              }
                             >
-                              <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 20 20"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
+                              <div className="profile-routine__info">
+                                <strong>{routine.title}</strong>
+                                <small>{routine.exercises_count || 0} ejercicios</small>
+                                <p>{routine.goal || 'Sin objetivo definido.'}</p>
+                              </div>
+                              <button
+                                type="button"
+                                className={`profile-routine__toggle ${isExpanded ? 'expanded' : ''}`}
+                                aria-label={isExpanded ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setExpandedRoutines((prev) => ({
+                                    ...prev,
+                                    [routine.id]: !prev[routine.id],
+                                  }))
+                                }}
                               >
-                                <path
-                                  d="M5 7.5L10 12.5L15 7.5"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 20 20"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M5 7.5L10 12.5L15 7.5"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                            {!isOwnProfile && currentUser && (
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCopyRoutine(routine)
+                                }}
+                                style={{
+                                  marginTop: '12px',
+                                  width: '100%',
+                                  fontSize: '14px',
+                                  padding: '8px 16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px',
+                                }}
+                              >
+                                <span className="material-icons" style={{ fontSize: '18px' }}>content_copy</span>
+                                Copiar rutina
+                              </button>
+                            )}
                           </div>
                           {isExpanded && routine.exercises && routine.exercises.length > 0 && (
                             <div className="profile-routine__exercises">
@@ -2859,36 +3080,28 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
                       key={client.email}
                       style={{
                         padding: '16px',
-                        background: selectedClient?.email === client.email ? '#2a2a2a' : '#1a1a1a',
+                        background: '#1a1a1a',
                         borderRadius: '8px',
                         border: '1px solid rgba(251, 191, 36, 0.3)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onClick={() => {
-                        setSelectedClient(client)
-                        setShowCreateRoutine(false)
-                        setShowProgress(false)
-                        setSelectedExercise('') // Reset exercise selection when changing client
-                        setMetric('weight') // Reset metric to weight
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px' }}>{client.name}</strong>
-                          <small style={{ color: '#a3a3a3' }}>{client.email}</small>
-                        </div>
-                        <button
-                          className="btn btn-outline btn-sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleRemoveClient(client.email)
-                          }}
-                          style={{ padding: '6px 12px', fontSize: '12px' }}
-                        >
-                          Eliminar
-                        </button>
+                      <div>
+                        <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px' }}>{client.name}</strong>
+                        <small style={{ color: '#a3a3a3' }}>{client.email}</small>
                       </div>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleRemoveClient(client.email)
+                        }}
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -2903,42 +3116,9 @@ function TrainersPage({ currentUser, userLoaded, ensureAuth }) {
             </div>
           )}
 
-          {selectedClient && (
+          {selectedClient && (showProgress || showCreateRoutine) && (
             <div style={{ marginTop: '32px', padding: '24px', background: '#1a1a1a', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h3 style={{ color: '#fbbf24', margin: 0 }}>Estudiante: {selectedClient.name}</h3>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      setShowProgress(!showProgress)
-                      setShowCreateRoutine(false)
-                      if (!showProgress) {
-                        fetchStudentProgress(selectedClient.email)
-                      }
-                    }}
-                  >
-                    {showProgress ? 'Ocultar' : 'Ver'} progreso
-                  </button>
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      fetchStudentRoutines(selectedClient.email)
-                    }}
-                  >
-                    Ver rutinas
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      setShowCreateRoutine(!showCreateRoutine)
-                      setShowProgress(false)
-                    }}
-                  >
-                    {showCreateRoutine ? 'Cancelar' : 'Crear rutina'}
-                  </button>
-                </div>
-              </div>
+              <h3 style={{ color: '#fbbf24', margin: '0 0 20px 0' }}>Estudiante: {selectedClient.name}</h3>
               
               {showProgress && (() => {
                 // Obtener todos los ejercicios únicos
@@ -3456,17 +3636,17 @@ function LandingContent({ metrics, focusAreas, roadmap, goToSection, onProgramsC
             <div className="why-angax__content animate-slide-right">
               <h3>Asistencia inteligente</h3>
               <p style={{ textAlign: 'justify', marginBottom: '1rem' }}>
-                Angel, tu asistente virtual, está siempre disponible para ayudarte a crear rutinas personalizadas según tus objetivos, resolver dudas 
-                sobre técnicas de ejercicio, periodización y nutrición, y guiarte en cada paso de tu entrenamiento. Con inteligencia artificial avanzada, 
-                Angel aprende de tus preferencias, historial de entrenamiento y metas para ofrecerte recomendaciones cada vez más precisas.
+                Angel, tu asistente virtual, está siempre disponible para ayudarte a navegar por AngaX y guiarte en cada paso de tu entrenamiento. 
+                Puede llevarte a cualquier sección de la plataforma, explicarte cómo crear y gestionar tus rutinas, mostrarte tu progreso y ayudarte 
+                a encontrar ejercicios por grupo muscular.
               </p>
               <p style={{ textAlign: 'justify', marginBottom: '1rem' }}>
-                Ya sea que necesites ajustar una rutina por una lesión, buscar ejercicios alternativos, entender la progresión adecuada de cargas o simplemente recibir motivación 
-                diaria, Angel está ahí para ti las 24 horas del día.
+                Ya sea que necesites información sobre cómo funciona la plataforma, guías paso a paso para usar las funciones, o simplemente recibir 
+                consejos aleatorios sobre entrenamiento, nutrición, técnica y recuperación, Angel está ahí para ti las 24 horas del día.
               </p>
               <p style={{ textAlign: 'justify' }}>
-                No importa si eres principiante buscando orientación o un atleta experimentado que quiere 
-                optimizar su rendimiento, Angel se adapta a tu nivel y te acompaña en cada etapa de tu transformación física.
+                No importa si eres principiante buscando orientación o un usuario experimentado que quiere aprovechar al máximo todas las funciones, 
+                Angel te ayuda a navegar por AngaX y te acompaña en cada etapa de tu transformación física.
               </p>
             </div>
           </div>
@@ -3632,6 +3812,8 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
   const [selectedCategory, setSelectedCategory] = useState('pecho')
   const [loadingExercises, setLoadingExercises] = useState(false)
   const [expandedRoutines, setExpandedRoutines] = useState({})
+  const [editingRoutineName, setEditingRoutineName] = useState(null)
+  const [editingRoutineNameValue, setEditingRoutineNameValue] = useState('')
   const [trainingOpen, setTrainingOpen] = useState(false)
   const [trainingRoutine, setTrainingRoutine] = useState(null)
   const [trainingExercises, setTrainingExercises] = useState([])
@@ -3686,6 +3868,11 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
   }
 
   const [clientEmail, setClientEmail] = useState(null)
+  const [trainerClients, setTrainerClients] = useState([])
+  const [selectedClientForRoutine, setSelectedClientForRoutine] = useState(null)
+  const [selectedClientForView, setSelectedClientForView] = useState(null)
+  const [loadingClients, setLoadingClients] = useState(false)
+  const isTrainer = currentUser?.role === 'trainer'
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search)
@@ -3694,14 +3881,52 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
   }, [location.search])
 
   useEffect(() => {
+    if (isTrainer && currentUser?.email) {
+      fetchTrainerClients()
+    }
+  }, [isTrainer, currentUser])
+
+  const fetchTrainerClients = async () => {
+    if (!currentUser?.email) return
+    setLoadingClients(true)
+    try {
+      const response = await fetch(`${apiBaseUrl}/trainer/clients?trainer_email=${encodeURIComponent(currentUser.email)}`)
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || 'No se pudieron cargar los clientes')
+      setTrainerClients(data.clients || [])
+    } catch (error) {
+      console.error('Error al cargar clientes:', error)
+    } finally {
+      setLoadingClients(false)
+    }
+  }
+
+  useEffect(() => {
     if (!userLoaded) return
     if (!currentUser) {
       ensureAuth()
       return
     }
-    fetchRoutines()
+    if (isTrainer) {
+      fetchTrainerClients()
+    }
+    if (!isTrainer) {
+      fetchRoutines()
+    }
     fetchAvailableExercises()
   }, [currentUser, userLoaded])
+
+  useEffect(() => {
+    if (activeTab === 'ver') {
+      if (isTrainer && selectedClientForView) {
+        fetchRoutines(selectedClientForView.email)
+      } else if (isTrainer && !selectedClientForView) {
+        setRoutines([])
+      } else if (!isTrainer) {
+        fetchRoutines()
+      }
+    }
+  }, [selectedClientForView, isTrainer, activeTab])
 
   useEffect(() => {
     if (location.hash) {
@@ -3716,10 +3941,11 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
     }
   }, [location.hash])
 
-  const fetchRoutines = async () => {
+  const fetchRoutines = async (clientEmail = null) => {
     if (!currentUser) return
     try {
-      const response = await fetch(`${apiBaseUrl}/routines?user_email=${encodeURIComponent(currentUser.email)}`)
+      const targetEmail = clientEmail || currentUser.email
+      const response = await fetch(`${apiBaseUrl}/routines?user_email=${encodeURIComponent(targetEmail)}`)
       const data = await response.json()
       setRoutines(data)
     } catch (error) {
@@ -3945,9 +4171,8 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
             sessionStorage.setItem('shareImageName', imageFileName)
             // Guardar la rutina completa en localStorage asociada al nombre de la imagen
             // Esto permitirá recuperarla cuando se publique el post
-            if (exercises.length > 3) {
-              localStorage.setItem(`sharedRoutine_${imageFileName}`, JSON.stringify(routine))
-            }
+            // Guardar siempre, sin importar cuántos ejercicios tenga
+            localStorage.setItem(`sharedRoutine_${imageFileName}`, JSON.stringify(routine))
             
             // Limpiar
             document.body.removeChild(shareContainer)
@@ -4262,6 +4487,62 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
     setRoutineForm((prev) => ({ ...prev, [name]: value }))
   }
 
+  const handleUpdateRoutineName = async (routineID, newName) => {
+    if (!currentUser) return
+    
+    if (!newName || !newName.trim()) {
+      setRoutineStatus('El nombre de la rutina no puede estar vacío.')
+      setTimeout(() => setRoutineStatus(''), 3000)
+      return
+    }
+
+    setRoutineStatus('Actualizando nombre...')
+    try {
+      const response = await fetch(`${apiBaseUrl}/routines/${routineID}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_email: currentUser.email,
+          routineName: newName.trim(),
+          goal: routines.find(r => r.routineID === routineID)?.goal || null,
+        }),
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo actualizar la rutina.')
+      }
+
+      // Actualizar la rutina en el estado local
+      setRoutines((prev) =>
+        prev.map((r) =>
+          r.routineID === routineID ? { ...r, routineName: newName.trim() } : r
+        )
+      )
+
+      setRoutineStatus('Nombre actualizado correctamente.')
+      setEditingRoutineName(null)
+      setEditingRoutineNameValue('')
+      setTimeout(() => setRoutineStatus(''), 3000)
+    } catch (error) {
+      setRoutineStatus(error.message || 'Error al actualizar el nombre.')
+      setTimeout(() => setRoutineStatus(''), 3000)
+    }
+  }
+
+  const startEditingRoutineName = (routine) => {
+    setEditingRoutineName(routine.routineID)
+    setEditingRoutineNameValue(routine.routineName)
+  }
+
+  const cancelEditingRoutineName = () => {
+    setEditingRoutineName(null)
+    setEditingRoutineNameValue('')
+  }
+
   const handleAddExercise = (exercise) => {
     const newExercise = {
       id: Date.now(),
@@ -4334,6 +4615,11 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       setRoutineStatus('Agrega al menos un ejercicio a la rutina')
       return
     }
+    // Si es entrenador, debe seleccionar un cliente
+    if (isTrainer && !selectedClientForRoutine && !clientEmail) {
+      setRoutineStatus('Selecciona un cliente para crear la rutina')
+      return
+    }
     // Validar que todos los ejercicios tengan series y reps válidos
     for (const exercise of selectedExercises) {
       if (!exercise.sets || exercise.sets <= 0) {
@@ -4364,9 +4650,10 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
         })),
       }
       
-      // Si hay un client_email, agregarlo al body (para entrenadores creando rutinas para clientes)
-      if (clientEmail) {
-        requestBody.client_email = clientEmail
+      // Si hay un client_email (de URL) o un cliente seleccionado (de selector), agregarlo al body
+      const targetClientEmail = selectedClientForRoutine?.email || clientEmail
+      if (targetClientEmail) {
+        requestBody.client_email = targetClientEmail
       }
 
       const response = await fetch(`${apiBaseUrl}/routines`, {
@@ -4390,8 +4677,10 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
       setTimeout(() => {
         setRoutineStatus('')
         // Si se creó para un cliente, redirigir a la página de entrenadores
-        if (clientEmail) {
+        const targetClientEmail = selectedClientForRoutine?.email || clientEmail
+        if (targetClientEmail) {
           navigate('/entrenadores')
+          setSelectedClientForRoutine(null) // Limpiar selección
         }
       }, 3000)
     } catch (error) {
@@ -4463,7 +4752,112 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
 
         {activeTab === 'crear' && (
           <div id="crear-rutina" className="programs-hub-full__content">
-            {clientEmail && (
+            {isTrainer && (
+              <div style={{
+                marginBottom: '24px',
+                padding: '20px',
+                background: '#1a1a1a',
+                borderRadius: '12px',
+                border: '1px solid rgba(251, 191, 36, 0.2)',
+              }}>
+                <h3 style={{ color: '#fbbf24', marginBottom: '16px', fontSize: '18px' }}>Seleccionar cliente</h3>
+                {loadingClients ? (
+                  <p style={{ color: '#a3a3a3' }}>Cargando clientes...</p>
+                ) : trainerClients.length === 0 ? (
+                  <p style={{ color: '#a3a3a3' }}>No tienes clientes asignados todavía.</p>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                    {trainerClients.map((client) => {
+                      const avatarStyle = getAvatarStyle(client.photo)
+                      const avatarLetter = client.name?.charAt(0).toUpperCase() ?? 'A'
+                      const isSelected = selectedClientForRoutine?.email === client.email
+                      return (
+                        <button
+                          key={client.userID}
+                          type="button"
+                          onClick={() => setSelectedClientForRoutine(client)}
+                          style={{
+                            padding: '16px',
+                            background: isSelected ? 'rgba(251, 191, 36, 0.2)' : '#2a2a2a',
+                            border: `2px solid ${isSelected ? '#fbbf24' : 'rgba(251, 191, 36, 0.1)'}`,
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.target.style.background = 'rgba(251, 191, 36, 0.1)'
+                              e.target.style.borderColor = 'rgba(251, 191, 36, 0.3)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.target.style.background = '#2a2a2a'
+                              e.target.style.borderColor = 'rgba(251, 191, 36, 0.1)'
+                            }
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '60px',
+                              height: '60px',
+                              borderRadius: '50%',
+                              background: client.photo ? 'transparent' : '#fbbf24',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: client.photo ? 'transparent' : '#000',
+                              fontWeight: 'bold',
+                              fontSize: '24px',
+                              ...avatarStyle,
+                            }}
+                          >
+                            {!client.photo && avatarLetter}
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <strong style={{ color: '#fbbf24', display: 'block', fontSize: '14px' }}>{client.name}</strong>
+                            <small style={{ color: '#a3a3a3', fontSize: '12px' }}>{client.email}</small>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                {selectedClientForRoutine && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    background: 'rgba(251, 191, 36, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                  }}>
+                    <p style={{ color: '#fbbf24', margin: 0, fontSize: '14px' }}>
+                      <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '8px' }}>person</span>
+                      Creando rutina para: <strong>{selectedClientForRoutine.name}</strong>
+                    </p>
+                  </div>
+                )}
+                {!selectedClientForRoutine && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    background: 'rgba(255, 193, 7, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 193, 7, 0.3)',
+                  }}>
+                    <p style={{ color: '#ffc107', margin: 0, fontSize: '14px' }}>
+                      <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '8px' }}>info</span>
+                      Selecciona un cliente para crearle una rutina
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            {clientEmail && !isTrainer && (
               <div style={{ 
                 padding: '16px', 
                 marginBottom: '24px', 
@@ -4723,13 +5117,120 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
 
         {activeTab === 'ver' && (
           <div id="rutinas-guardadas" className="programs-hub-full__content">
-            <div className="routines-view-layout">
-              <header className="routines-view-header">
-              <h2>Tus rutinas</h2>
-              {routines.length > 0 && (
-                <span className="routines-count-badge">{routines.length} {routines.length === 1 ? 'rutina' : 'rutinas'}</span>
-              )}
-            </header>
+            {isTrainer && (
+              <div style={{
+                marginBottom: '24px',
+                padding: '20px',
+                background: '#1a1a1a',
+                borderRadius: '12px',
+                border: '1px solid rgba(251, 191, 36, 0.2)',
+              }}>
+                <h3 style={{ color: '#fbbf24', marginBottom: '16px', fontSize: '18px' }}>Seleccionar cliente</h3>
+                {loadingClients ? (
+                  <p style={{ color: '#a3a3a3' }}>Cargando clientes...</p>
+                ) : trainerClients.length === 0 ? (
+                  <p style={{ color: '#a3a3a3' }}>No tienes clientes asignados todavía.</p>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                    {trainerClients.map((client) => {
+                      const avatarStyle = getAvatarStyle(client.photo)
+                      const avatarLetter = client.name?.charAt(0).toUpperCase() ?? 'A'
+                      const isSelected = selectedClientForView?.email === client.email
+                      return (
+                        <button
+                          key={client.userID}
+                          type="button"
+                          onClick={() => setSelectedClientForView(client)}
+                          style={{
+                            padding: '16px',
+                            background: isSelected ? 'rgba(251, 191, 36, 0.2)' : '#2a2a2a',
+                            border: `2px solid ${isSelected ? '#fbbf24' : 'rgba(251, 191, 36, 0.1)'}`,
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '8px',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.target.style.background = 'rgba(251, 191, 36, 0.1)'
+                              e.target.style.borderColor = 'rgba(251, 191, 36, 0.3)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.target.style.background = '#2a2a2a'
+                              e.target.style.borderColor = 'rgba(251, 191, 36, 0.1)'
+                            }
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '60px',
+                              height: '60px',
+                              borderRadius: '50%',
+                              background: client.photo ? 'transparent' : '#fbbf24',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: client.photo ? 'transparent' : '#000',
+                              fontWeight: 'bold',
+                              fontSize: '24px',
+                              ...avatarStyle,
+                            }}
+                          >
+                            {!client.photo && avatarLetter}
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <strong style={{ color: '#fbbf24', display: 'block', fontSize: '14px' }}>{client.name}</strong>
+                            <small style={{ color: '#a3a3a3', fontSize: '12px' }}>{client.email}</small>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                {selectedClientForView && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    background: 'rgba(251, 191, 36, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                  }}>
+                    <p style={{ color: '#fbbf24', margin: 0, fontSize: '14px' }}>
+                      <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '8px' }}>person</span>
+                      Viendo rutinas de: <strong>{selectedClientForView.name}</strong>
+                    </p>
+                  </div>
+                )}
+                {!selectedClientForView && (
+                  <div style={{
+                    marginTop: '16px',
+                    padding: '12px',
+                    background: 'rgba(255, 193, 7, 0.1)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 193, 7, 0.3)',
+                  }}>
+                    <p style={{ color: '#ffc107', margin: 0, fontSize: '14px' }}>
+                      <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '8px' }}>info</span>
+                      Selecciona un cliente para ver sus rutinas guardadas
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(!isTrainer || selectedClientForView) && (
+              <div className="routines-view-layout">
+                <header className="routines-view-header">
+                <h2>{isTrainer ? `Rutinas de ${selectedClientForView?.name}` : 'Tus rutinas'}</h2>
+                {routines.length > 0 && (
+                  <span className="routines-count-badge">{routines.length} {routines.length === 1 ? 'rutina' : 'rutinas'}</span>
+                )}
+              </header>
             {routines.length === 0 ? (
               <div className="routines-empty-state">
                 <div className="routines-empty-icon"><span className="material-icons">fitness_center</span></div>
@@ -4744,7 +5245,88 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
                     <div key={routine.routineID} className="routine-view-card">
                       <div className="routine-view-card-header">
                         <div className="routine-view-card-title-section">
-                          <h3>{routine.routineName}</h3>
+                          {editingRoutineName === routine.routineID ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                              <input
+                                type="text"
+                                value={editingRoutineNameValue}
+                                onChange={(e) => setEditingRoutineNameValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleUpdateRoutineName(routine.routineID, editingRoutineNameValue)
+                                  } else if (e.key === 'Escape') {
+                                    cancelEditingRoutineName()
+                                  }
+                                }}
+                                autoFocus
+                                style={{
+                                  flex: 1,
+                                  padding: '8px 12px',
+                                  background: '#1a1a1a',
+                                  border: '1px solid #fbbf24',
+                                  borderRadius: '6px',
+                                  color: '#fbbf24',
+                                  fontSize: '18px',
+                                  fontWeight: '600',
+                                  fontFamily: 'inherit',
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateRoutineName(routine.routineID, editingRoutineNameValue)}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: '#fbbf24',
+                                  color: '#000',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                <span className="material-icons" style={{ fontSize: '18px' }}>check</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEditingRoutineName}
+                                style={{
+                                  padding: '6px 12px',
+                                  background: 'transparent',
+                                  color: '#ef4444',
+                                  border: '1px solid #ef4444',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  fontSize: '14px',
+                                  fontWeight: '600',
+                                }}
+                              >
+                                <span className="material-icons" style={{ fontSize: '18px' }}>close</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                              <h3 style={{ flex: 1, margin: 0 }}>{routine.routineName}</h3>
+                              <button
+                                type="button"
+                                onClick={() => startEditingRoutineName(routine)}
+                                style={{
+                                  padding: '4px 8px',
+                                  background: 'transparent',
+                                  color: '#fbbf24',
+                                  border: '1px solid #fbbf24',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                                title="Editar nombre"
+                              >
+                                <span className="material-icons" style={{ fontSize: '16px' }}>edit</span>
+                              </button>
+                            </div>
+                          )}
                           <div className="routine-view-card-badges">
                             <span className="routine-view-badge">{routine.exercises?.length || 0} ejercicios</span>
                             {routine.completions_count > 0 && (
@@ -4860,7 +5442,11 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
                                 body: JSON.stringify({ user_email: currentUser.email }),
                               })
                               if (!response.ok) throw new Error('Error al eliminar la rutina')
-                              fetchRoutines()
+                              if (isTrainer && selectedClientForView) {
+                                fetchRoutines(selectedClientForView.email)
+                              } else {
+                                fetchRoutines()
+                              }
                               setRoutineStatus('Rutina eliminada ✅')
                               setTimeout(() => setRoutineStatus(''), 3000)
                             } catch (error) {
@@ -4878,6 +5464,7 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
             )}
             {routineStatus && <p className="builder-hint">{replaceEmojisWithIcons(routineStatus)}</p>}
             </div>
+            )}
           </div>
         )}
 
@@ -4911,6 +5498,29 @@ function RoutinesPage({ currentUser, userLoaded, ensureAuth }) {
         <div className="auth-modal__header">
           <h3>Entrenamiento: {trainingRoutine?.routineName}</h3>
           <p>Registra lo que hiciste hoy (peso/reps/series). Esto se guarda en Progreso.</p>
+        </div>
+
+        <div style={{
+          margin: '20px 0',
+          padding: '16px',
+          background: 'rgba(251, 191, 36, 0.1)',
+          border: '1px solid rgba(251, 191, 36, 0.3)',
+          borderRadius: '8px',
+          borderLeft: '4px solid #fbbf24',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <span className="material-icons" style={{ fontSize: '24px', color: '#fbbf24', flexShrink: 0 }}>warning</span>
+            <div style={{ flex: 1 }}>
+              <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '8px', fontSize: '14px' }}>
+                Importante: Entrena con seguridad y técnica
+              </strong>
+              <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
+                Recuerda que más peso no siempre es mejor. Prioriza la técnica correcta, la seguridad y el cuidado de tu salud. 
+                Realiza los ejercicios con responsabilidad, respeta tus límites y escucha a tu cuerpo. La progresión gradual y 
+                constante es la clave para un entrenamiento efectivo y seguro.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="session-form">
@@ -5230,22 +5840,55 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
   const [status, setStatus] = useState('')
   const [selectedExercise, setSelectedExercise] = useState('')
   const [metric, setMetric] = useState('weight')
-  const [currentPage, setCurrentPage] = useState(1) 
+  const [currentPage, setCurrentPage] = useState(1)
+  
+  // Estados para entrenadores
+  const [clients, setClients] = useState([])
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [loadingClients, setLoadingClients] = useState(false)
 
   const canView = Boolean(currentUser)
+  const isTrainer = currentUser?.role === 'trainer'
 
-  const fetchProgress = async () => {
+  const fetchClients = async () => {
+    if (!currentUser || !isTrainer) return
+    setLoadingClients(true)
+    try {
+      const response = await fetch(`${apiBaseUrl}/trainer/clients?trainer_email=${encodeURIComponent(currentUser.email)}`)
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || 'No se pudieron cargar los clientes')
+      setClients(data.clients || [])
+    } catch (error) {
+      setStatus(error.message || 'Error al cargar clientes')
+    } finally {
+      setLoadingClients(false)
+    }
+  }
+
+  const fetchProgress = async (email = null) => {
     if (!currentUser) return
+    const targetEmail = email || currentUser.email
     setLoading(true)
     setStatus('')
     setCurrentPage(1) // Resetear a la primera página
     try {
-      const response = await fetch(`${apiBaseUrl}/progress?email=${encodeURIComponent(currentUser.email)}`)
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.message || data.error || 'No se pudo cargar el progreso')
-      setProgress(data)
+      let response
+      if (isTrainer && email) {
+        // Si es entrenador y hay un cliente seleccionado, usar el endpoint de estudiante
+        response = await fetch(`${apiBaseUrl}/trainer/student-progress?trainer_email=${encodeURIComponent(currentUser.email)}&student_email=${encodeURIComponent(email)}`)
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message || data.error || 'No se pudo cargar el progreso')
+        setProgress(data.progress || [])
+      } else {
+        // Progreso normal del usuario
+        response = await fetch(`${apiBaseUrl}/progress?email=${encodeURIComponent(targetEmail)}`)
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.message || data.error || 'No se pudo cargar el progreso')
+        setProgress(data)
+      }
     } catch (error) {
       setStatus(error.message || 'Error al cargar progreso')
+      setProgress([])
     } finally {
       setLoading(false)
     }
@@ -5257,8 +5900,20 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
       ensureAuth()
       return
     }
-    fetchProgress()
+    if (isTrainer) {
+      fetchClients()
+    } else {
+      fetchProgress()
+    }
   }, [currentUser, userLoaded])
+
+  useEffect(() => {
+    if (isTrainer && selectedClient) {
+      fetchProgress(selectedClient.email)
+    } else if (isTrainer && !selectedClient) {
+      setProgress([])
+    }
+  }, [selectedClient, isTrainer])
 
   const allExercises = (() => {
     const set = new Set()
@@ -5345,15 +6000,14 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
   const totals = (() => {
     const workouts = progress.length
     const last = progress[0]?.completed_at ?? null
-    const volume = progress.reduce((sum, session) => {
-      const v = (session.exercises || []).reduce((acc, ex) => {
-        const w = ex.weight == null ? 0 : Number(ex.weight)
-        const r = ex.reps == null ? 0 : Number(ex.reps)
-        const s = ex.sets == null ? 0 : Number(ex.sets)
-        return acc + w * r * s
-      }, 0)
-      return sum + v
-    }, 0)
+    // Contar rutinas únicas completadas (por routineID)
+    const completedRoutines = new Set()
+    progress.forEach((session) => {
+      if (session.routineID) {
+        completedRoutines.add(session.routineID)
+      }
+    })
+    const routinesCompleted = completedRoutines.size
     const groups = progress.reduce((acc, session) => {
       ;(session.exercises || []).forEach((ex) => {
         const key = ex.muscleGroup || 'otros'
@@ -5362,7 +6016,7 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
       return acc
     }, {})
     const topGroup = Object.entries(groups).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
-    return { workouts, last, volume, topGroup }
+    return { workouts, last, routinesCompleted, topGroup }
   })()
 
   const chartRef = useRef(null)
@@ -5528,20 +6182,127 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
           <div className="programs-hub-full__header-content">
             <p className="eyebrow" style={{ color: 'rgba(251, 191, 36, 0.7)', fontSize: '14px', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Ejecución + análisis</p>
             <h2>Progreso</h2>
-            <p>Historial de entrenamientos, métricas y evolución por ejercicio.</p>
+            <p>{isTrainer ? 'Selecciona un cliente para ver su progreso, métricas y evolución.' : 'Historial de entrenamientos, métricas y evolución por ejercicio.'}</p>
           </div>
         </div>
 
         <div className="programs-hub-full__content">
+          {isTrainer && (
+            <div style={{
+              marginBottom: '24px',
+              padding: '20px',
+              background: '#1a1a1a',
+              borderRadius: '12px',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+            }}>
+              <h3 style={{ color: '#fbbf24', marginBottom: '16px', fontSize: '18px' }}>Seleccionar cliente</h3>
+              {loadingClients ? (
+                <p style={{ color: '#a3a3a3' }}>Cargando clientes...</p>
+              ) : clients.length === 0 ? (
+                <p style={{ color: '#a3a3a3' }}>No tienes clientes asignados todavía.</p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                  {clients.map((client) => {
+                    const avatarStyle = getAvatarStyle(client.photo)
+                    const avatarLetter = client.name?.charAt(0).toUpperCase() ?? 'A'
+                    const isSelected = selectedClient?.email === client.email
+                    return (
+                      <button
+                        key={client.userID}
+                        type="button"
+                        onClick={() => setSelectedClient(client)}
+                        style={{
+                          padding: '16px',
+                          background: isSelected ? 'rgba(251, 191, 36, 0.2)' : '#2a2a2a',
+                          border: `2px solid ${isSelected ? '#fbbf24' : 'rgba(251, 191, 36, 0.1)'}`,
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.target.style.background = 'rgba(251, 191, 36, 0.1)'
+                            e.target.style.borderColor = 'rgba(251, 191, 36, 0.3)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.target.style.background = '#2a2a2a'
+                            e.target.style.borderColor = 'rgba(251, 191, 36, 0.1)'
+                          }
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '50%',
+                            background: client.photo ? 'transparent' : '#fbbf24',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: client.photo ? 'transparent' : '#000',
+                            fontWeight: 'bold',
+                            fontSize: '24px',
+                            ...avatarStyle,
+                          }}
+                        >
+                          {!client.photo && avatarLetter}
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <strong style={{ color: '#fbbf24', display: 'block', fontSize: '14px' }}>{client.name}</strong>
+                          <small style={{ color: '#a3a3a3', fontSize: '12px' }}>{client.email}</small>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {selectedClient && (
+                <div style={{
+                  marginTop: '16px',
+                  padding: '12px',
+                  background: 'rgba(251, 191, 36, 0.1)',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                }}>
+                  <p style={{ color: '#fbbf24', margin: 0, fontSize: '14px' }}>
+                    <span className="material-icons" style={{ fontSize: '18px', verticalAlign: 'middle', marginRight: '8px' }}>person</span>
+                    Viendo progreso de: <strong>{selectedClient.name}</strong>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
+          {isTrainer && !selectedClient && (
+            <div style={{
+              padding: '40px',
+              textAlign: 'center',
+              background: '#1a1a1a',
+              borderRadius: '12px',
+              border: '1px solid rgba(251, 191, 36, 0.2)',
+            }}>
+              <span className="material-icons" style={{ fontSize: '48px', color: '#fbbf24', marginBottom: '16px', display: 'block' }}>person_search</span>
+              <h3 style={{ color: '#fbbf24', marginBottom: '8px' }}>Selecciona un cliente</h3>
+              <p style={{ color: '#a3a3a3' }}>Elige un cliente de la lista arriba para ver su progreso, entrenamientos y gráficas.</p>
+            </div>
+          )}
+
+          {(!isTrainer || selectedClient) && (
+            <>
         <div className="progress__grid">
           <div className="progress-card">
             <p>Entrenamientos</p>
             <strong>{totals.workouts}</strong>
           </div>
           <div className="progress-card">
-            <p>Volumen total</p>
-            <strong>{Math.round(totals.volume).toLocaleString()} kg</strong>
+            <p>Rutinas completadas</p>
+            <strong>{totals.routinesCompleted}</strong>
           </div>
           <div className="progress-card">
             <p>Última sesión</p>
@@ -5721,8 +6482,219 @@ function ProgressPage({ currentUser, userLoaded, ensureAuth }) {
             )}
           </div>
         </div>
+            </>
+          )}
         </div>
       </div>
+    </section>
+  )
+}
+
+function AdminAccountsPage({ currentUser, userLoaded, ensureAuth }) {
+  const navigate = useNavigate()
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState('')
+  const [pendingDelete, setPendingDelete] = useState(null)
+
+  const isAdmin = currentUser?.role === 'admin'
+
+  useEffect(() => {
+    if (!userLoaded) return
+    if (!currentUser) {
+      ensureAuth()
+      return
+    }
+    if (!isAdmin) {
+      navigate('/')
+      return
+    }
+    fetchUsers()
+  }, [currentUser, userLoaded, isAdmin])
+
+  const fetchUsers = async () => {
+    if (!currentUser?.email) return
+    setLoading(true)
+    setStatus('')
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/users?admin_email=${encodeURIComponent(currentUser.email)}`)
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || 'No se pudieron cargar los usuarios')
+      setUsers(data.users || [])
+    } catch (error) {
+      setStatus(error.message || 'Error al cargar usuarios')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteUser = (userId) => {
+    const user = users.find(u => u.userID === userId)
+    setPendingDelete({ id: userId, name: user?.name || 'este usuario' })
+  }
+
+  const confirmDeleteUser = async () => {
+    if (!currentUser?.email || !pendingDelete) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`${apiBaseUrl}/admin/users/${pendingDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_email: currentUser.email }),
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || 'Error al eliminar usuario')
+      setStatus('Usuario eliminado exitosamente')
+      setTimeout(() => setStatus(''), 3000)
+      setPendingDelete(null)
+      fetchUsers()
+    } catch (error) {
+      setStatus(error.message || 'Error al eliminar usuario')
+      setTimeout(() => setStatus(''), 3000)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const cancelDeleteUser = () => {
+    setPendingDelete(null)
+  }
+
+  if (!userLoaded) {
+    return (
+      <section className="section section-light">
+        <div className="section__inner container-xl text-center">
+          <p>Cargando...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (!currentUser || !isAdmin) {
+    return (
+      <section className="section section-light">
+        <div className="section__inner container-xl text-center">
+          <h2>Acceso denegado</h2>
+          <p>No tienes permisos para acceder a esta sección.</p>
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="section section-light programs-hub-full">
+      <div className="programs-hub-full__container">
+        <div className="programs-hub-full__header">
+          <div className="programs-hub-full__header-content">
+            <p className="eyebrow">Panel de administración</p>
+            <h2>Gestión de cuentas</h2>
+            <p>Administra y elimina cuentas de usuarios de la plataforma.</p>
+          </div>
+        </div>
+
+        <div className="programs-hub-full__content">
+          {status && (
+            <div style={{
+              padding: '12px',
+              marginBottom: '16px',
+              background: status.includes('Error') ? '#ff4444' : '#4caf50',
+              color: '#fff',
+              borderRadius: '8px',
+              textAlign: 'center',
+            }}>
+              {status}
+            </div>
+          )}
+
+          {loading ? (
+            <p style={{ textAlign: 'center', color: '#a3a3a3' }}>Cargando usuarios...</p>
+          ) : users.length === 0 ? (
+            <div style={{ padding: '40px', textAlign: 'center', background: '#1a1a1a', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+              <p style={{ color: '#a3a3a3' }}>No hay usuarios registrados.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {users.map((user) => (
+                <div
+                  key={user.userID}
+                  style={{
+                    padding: '20px',
+                    background: '#1a1a1a',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '4px', fontSize: '18px' }}>
+                      {user.name}
+                    </strong>
+                    <small style={{ color: '#a3a3a3', display: 'block', marginBottom: '4px' }}>
+                      {user.email}
+                    </small>
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                      <span style={{
+                        padding: '4px 8px',
+                        background: user.role === 'trainer' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(107, 114, 128, 0.2)',
+                        border: `1px solid ${user.role === 'trainer' ? '#3b82f6' : '#6b7280'}`,
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        color: user.role === 'trainer' ? '#3b82f6' : '#9ca3af',
+                      }}>
+                        {user.role === 'trainer' ? 'Entrenador' : 'Usuario'}
+                      </span>
+                      <span style={{
+                        padding: '4px 8px',
+                        background: user.isActive ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        border: `1px solid ${user.isActive ? '#22c55e' : '#ef4444'}`,
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        color: user.isActive ? '#22c55e' : '#ef4444',
+                      }}>
+                        {user.isActive ? 'Activo' : 'Inactivo'}
+                      </span>
+                      {user.registerDate && (
+                        <span style={{ color: '#6b7280', fontSize: '12px' }}>
+                          Registrado: {new Date(user.registerDate).toLocaleDateString('es-ES')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDeleteUser(user.userID)}
+                    style={{ padding: '8px 16px', fontSize: '14px' }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {pendingDelete && createPortal(
+        <div className="confirm-modal open" role="dialog" aria-modal="true" aria-label="Eliminar usuario">
+          <div className="confirm-modal__backdrop" onClick={cancelDeleteUser} />
+          <div className="confirm-modal__content">
+            <h4>Eliminar usuario</h4>
+            <p>¿Estás seguro de que deseas eliminar a <strong>{pendingDelete.name}</strong>? Esta acción no se puede deshacer.</p>
+            <div className="confirm-modal__actions">
+              <button type="button" className="btn btn-outline" onClick={cancelDeleteUser}>
+                Cancelar
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={confirmDeleteUser} disabled={loading}>
+                {loading ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </section>
   )
 }
@@ -5751,45 +6723,230 @@ function CommunityPage({ currentUser, ensureAuth }) {
   const [commentsPage, setCommentsPage] = useState({}) // { postId: pageNumber }
   const [commentsTotal, setCommentsTotal] = useState({}) // { postId: totalCount }
   const [sharedRoutineModal, setSharedRoutineModal] = useState(null)
+  const [copyRoutineStatus, setCopyRoutineStatus] = useState('')
 
   const canPost = Boolean(currentUser)
+
+  const handleCopySharedRoutine = async (routine) => {
+    if (!currentUser) {
+      setCopyRoutineStatus('Debes iniciar sesión para copiar rutinas.')
+      setTimeout(() => setCopyRoutineStatus(''), 3000)
+      return
+    }
+
+    if (!routine.exercises || routine.exercises.length === 0) {
+      setCopyRoutineStatus('Esta rutina no tiene ejercicios para copiar.')
+      setTimeout(() => setCopyRoutineStatus(''), 3000)
+      return
+    }
+
+    setCopyRoutineStatus('Copiando rutina...')
+    
+    try {
+      // Función auxiliar para obtener la ruta de imagen del ejercicio
+      const getExerciseImagePath = (exerciseName, muscleGroup, imagePath) => {
+        // Si ya viene imagePath del servidor, usarlo
+        if (imagePath) return imagePath
+        // Si no, construir la ruta estándar
+        return `/ejercicios/${muscleGroup}/${exerciseName}.gif`
+      }
+
+      // Preparar los ejercicios para la API
+      // La estructura puede variar: exerciseName o name, muscleGroup, sets, reps, weight
+      const exercises = routine.exercises.map(exercise => ({
+        exerciseName: exercise.exerciseName || exercise.name,
+        muscleGroup: exercise.muscleGroup,
+        imagePath: getExerciseImagePath(
+          exercise.exerciseName || exercise.name, 
+          exercise.muscleGroup, 
+          exercise.imagePath
+        ),
+        sets: exercise.sets || exercise.pivot?.sets || 3,
+        reps: exercise.reps || exercise.pivot?.reps || 10,
+        weight: exercise.weight || exercise.pivot?.weight || null,
+      }))
+
+      // Crear la rutina copiada con un nombre que indique que es una copia
+      const routineName = `${routine.routineName || routine.title} (copiada)`
+      
+      const response = await fetch(`${apiBaseUrl}/routines`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_email: currentUser.email,
+          routineName: routineName,
+          goal: routine.goal || null,
+          exercises: exercises,
+        }),
+      })
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'No se pudo copiar la rutina.')
+      }
+
+      setCopyRoutineStatus('Rutina copiada exitosamente. Ya está disponible en tus rutinas.')
+      setTimeout(() => {
+        setCopyRoutineStatus('')
+        setSharedRoutineModal(null)
+        // Opcional: redirigir a rutinas después de 2 segundos
+        setTimeout(() => {
+          navigate('/rutinas')
+        }, 2000)
+      }, 3000)
+    } catch (error) {
+      setCopyRoutineStatus(error.message || 'Error al copiar la rutina.')
+      setTimeout(() => setCopyRoutineStatus(''), 3000)
+    }
+  }
   const renderPostContent = (post) => {
+    // Buscar rutina compartida en localStorage asociada a la imagen del post
+    let sharedRoutine = null
+    if (post.image_url) {
+      const fullImageUrl = post.image_url.startsWith('http')
+        ? post.image_url
+        : `${backendBaseUrl}${post.image_url}`
+      const imageName = post.image_url.split('/').pop() || ''
+      try {
+        // Intentar múltiples formas de buscar la rutina
+        const routineByUrl = localStorage.getItem(`sharedRoutine_${fullImageUrl}`)
+        const routineByName = imageName ? localStorage.getItem(`sharedRoutine_${imageName}`) : null
+        // También buscar sin extensión
+        const imageNameWithoutExt = imageName.replace(/\.[^/.]+$/, '')
+        const routineByNameNoExt = imageNameWithoutExt ? localStorage.getItem(`sharedRoutine_${imageNameWithoutExt}`) : null
+        // También buscar por la URL relativa
+        const routineByRelativeUrl = localStorage.getItem(`sharedRoutine_${post.image_url}`)
+        
+        const routineData = routineByUrl || routineByName || routineByNameNoExt || routineByRelativeUrl
+        if (routineData) {
+          sharedRoutine = JSON.parse(routineData)
+        }
+      } catch (e) {
+        console.error('Error al cargar rutina compartida:', e)
+      }
+    }
+
     const parsed = parseSharedWorkout(post?.content)
     if (!parsed) {
-      return <p className="community-post__content community-post__content--pre">{post.content}</p>
+      return (
+        <div>
+          <p className="community-post__content community-post__content--pre">{post.content}</p>
+          {sharedRoutine && sharedRoutine.exercises && sharedRoutine.exercises.length > 0 && (
+            <div style={{ 
+              marginTop: '12px',
+              padding: '12px',
+              textAlign: 'center',
+              borderTop: '1px solid rgba(251, 191, 36, 0.2)',
+              background: 'rgba(26, 32, 44, 0.3)',
+              borderRadius: '8px'
+            }}>
+              <button
+                type="button"
+                onClick={() => setSharedRoutineModal(sharedRoutine)}
+                style={{
+                  padding: '8px 16px',
+                  background: 'transparent',
+                  color: '#fbbf24',
+                  border: '1px solid #fbbf24',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#fbbf24'
+                  e.target.style.color = '#000'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'transparent'
+                  e.target.style.color = '#fbbf24'
+                }}
+              >
+                Ver rutina completa ({sharedRoutine.exercises.length} {sharedRoutine.exercises.length === 1 ? 'ejercicio' : 'ejercicios'}){' '}
+                <span className="material-icons" style={{ fontSize: '16px', verticalAlign: 'middle', marginLeft: '4px' }}>arrow_forward</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )
     }
 
     return (
-      <div className="shared-workout">
-        <div className="shared-workout__header">
-          <span className="shared-workout__badge">{parsed.type === 'routine' ? 'Rutina' : 'Entrenamiento'}</span>
-          <div className="shared-workout__title">
-            <strong>{parsed.title}</strong>
-            {parsed.subtitle ? <span className="shared-workout__subtitle">Objetivo: {parsed.subtitle}</span> : null}
+      <div>
+        <div className="shared-workout">
+          <div className="shared-workout__header">
+            <span className="shared-workout__badge">{parsed.type === 'routine' ? 'Rutina' : 'Entrenamiento'}</span>
+            <div className="shared-workout__title">
+              <strong>{parsed.title}</strong>
+              {parsed.subtitle ? <span className="shared-workout__subtitle">Objetivo: {parsed.subtitle}</span> : null}
+            </div>
+          </div>
+
+          <div className="shared-workout__grid">
+            {parsed.items.length ? (
+              parsed.items.map((it, idx) => (
+                <div key={`${it.name}_${idx}`} className="shared-workout__item">
+                  <div className="shared-workout__item-name">{it.name}</div>
+                  <div className="shared-workout__item-meta">
+                    {it.weight != null && <span className="chip">{it.weight}kg</span>}
+                    {it.sets != null && it.reps != null ? (
+                      <span className="chip">
+                        {it.sets}x{it.reps}
+                      </span>
+                    ) : (
+                      <span className="chip">{it.raw}</span>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="shared-workout__empty">Sin ejercicios.</div>
+            )}
           </div>
         </div>
-
-        <div className="shared-workout__grid">
-          {parsed.items.length ? (
-            parsed.items.map((it, idx) => (
-              <div key={`${it.name}_${idx}`} className="shared-workout__item">
-                <div className="shared-workout__item-name">{it.name}</div>
-                <div className="shared-workout__item-meta">
-                  {it.weight != null && <span className="chip">{it.weight}kg</span>}
-                  {it.sets != null && it.reps != null ? (
-                    <span className="chip">
-                      {it.sets}x{it.reps}
-                    </span>
-                  ) : (
-                    <span className="chip">{it.raw}</span>
-                  )}
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="shared-workout__empty">Sin ejercicios.</div>
-          )}
-        </div>
+        {sharedRoutine && sharedRoutine.exercises && sharedRoutine.exercises.length > 0 && (
+          <div style={{ 
+            marginTop: '12px',
+            padding: '12px',
+            textAlign: 'center',
+            borderTop: '1px solid rgba(251, 191, 36, 0.2)',
+            background: 'rgba(26, 32, 44, 0.3)',
+            borderRadius: '8px'
+          }}>
+            <button
+              type="button"
+              onClick={() => setSharedRoutineModal(sharedRoutine)}
+              style={{
+                padding: '8px 16px',
+                background: 'transparent',
+                color: '#fbbf24',
+                border: '1px solid #fbbf24',
+                borderRadius: '6px',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#fbbf24'
+                e.target.style.color = '#000'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent'
+                e.target.style.color = '#fbbf24'
+              }}
+            >
+              Ver rutina completa ({sharedRoutine.exercises.length} {sharedRoutine.exercises.length === 1 ? 'ejercicio' : 'ejercicios'}){' '}
+              <span className="material-icons" style={{ fontSize: '16px', verticalAlign: 'middle', marginLeft: '4px' }}>arrow_forward</span>
+            </button>
+          </div>
+        )}
       </div>
     )
   }
@@ -5826,16 +6983,9 @@ function CommunityPage({ currentUser, ensureAuth }) {
         .then(blob => {
           const file = new File([blob], shareImageName, { type: 'image/png' })
           setImageFile(file)
-          // Buscar rutina compartida en localStorage asociada al nombre del archivo
-          try {
-            const routineData = localStorage.getItem(`sharedRoutine_${shareImageName}`)
-            if (routineData) {
-              const routine = JSON.parse(routineData)
-              setSharedRoutineModal(routine)
-            }
-          } catch (e) {
-            console.error('Error al cargar rutina compartida desde localStorage:', e)
-          }
+          // NO establecer sharedRoutineModal aquí - solo guardar la rutina en localStorage
+          // El modal se abrirá solo cuando el usuario haga clic en "Ver rutina completa" en el post publicado
+          // La rutina ya está guardada en localStorage con la clave `sharedRoutine_${shareImageName}`
           // Limpiar sessionStorage
           sessionStorage.removeItem('shareImage')
           sessionStorage.removeItem('shareImageName')
@@ -5906,6 +7056,23 @@ function CommunityPage({ currentUser, ensureAuth }) {
       const formData = new FormData()
       formData.append('user_name', currentUser.name)
       formData.append('user_email', currentUser.email)
+      
+      // Si hay una imagen de rutina compartida, obtener la rutina desde localStorage
+      // NO incluirla en el content para evitar exceder el límite de caracteres
+      // La rutina se guardará asociada a la URL de la imagen después de publicar
+      let routineToInclude = null
+      if (imageFile && imageFile.name) {
+        try {
+          const routineData = localStorage.getItem(`sharedRoutine_${imageFile.name}`)
+          if (routineData) {
+            routineToInclude = JSON.parse(routineData)
+          }
+        } catch (e) {
+          console.error('Error al cargar rutina compartida:', e)
+        }
+      }
+      
+      // Solo incluir el content del usuario, sin la rutina
       if (content.trim()) {
         formData.append('content', content.trim())
       }
@@ -5945,16 +7112,28 @@ function CommunityPage({ currentUser, ensureAuth }) {
       }
       
       // Si hay una rutina compartida y la publicación fue exitosa, guardarla asociada a la URL de la imagen
-      if (data.image_url && sharedRoutineModal) {
+      if (data.image_url && routineToInclude) {
         try {
           // Extraer el nombre del archivo de la URL
           const imageUrl = data.image_url
           const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${backendBaseUrl}${imageUrl}`
           const imageName = imageUrl.split('/').pop() || ''
-          // Guardar la rutina asociada a la URL completa y al nombre del archivo
-          localStorage.setItem(`sharedRoutine_${fullImageUrl}`, JSON.stringify(sharedRoutineModal))
+          const imageNameWithoutExt = imageName.replace(/\.[^/.]+$/, '')
+          
+          // Guardar la rutina asociada a múltiples claves para facilitar la búsqueda
+          localStorage.setItem(`sharedRoutine_${fullImageUrl}`, JSON.stringify(routineToInclude))
           if (imageName) {
-            localStorage.setItem(`sharedRoutine_${imageName}`, JSON.stringify(sharedRoutineModal))
+            localStorage.setItem(`sharedRoutine_${imageName}`, JSON.stringify(routineToInclude))
+          }
+          if (imageNameWithoutExt) {
+            localStorage.setItem(`sharedRoutine_${imageNameWithoutExt}`, JSON.stringify(routineToInclude))
+          }
+          // También guardar con la URL relativa
+          localStorage.setItem(`sharedRoutine_${imageUrl}`, JSON.stringify(routineToInclude))
+          
+          // Si tenemos el nombre original del archivo, también guardarlo
+          if (imageFile && imageFile.name) {
+            localStorage.setItem(`sharedRoutine_${imageFile.name}`, JSON.stringify(routineToInclude))
           }
         } catch (e) {
           console.error('Error al guardar rutina compartida:', e)
@@ -6047,10 +7226,16 @@ function CommunityPage({ currentUser, ensureAuth }) {
     if (!ensureAuth()) return
     setCommentMessages((prev) => ({ ...prev, [postId]: 'Eliminando comentario…' }))
     try {
-      const response = await fetch(`${apiBaseUrl}/comments/${commentId}`, {
+      const isAdmin = currentUser?.role === 'admin'
+      const url = `${apiBaseUrl}/comments/${commentId}`
+      const body = isAdmin
+        ? JSON.stringify({ admin_email: currentUser.email })
+        : JSON.stringify({ user_email: currentUser.email })
+      
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_email: currentUser.email }),
+        body: body,
       })
       const data = await response.json()
       if (!response.ok) {
@@ -6323,10 +7508,16 @@ function CommunityPage({ currentUser, ensureAuth }) {
     if (!pendingDeletePost || !ensureAuth()) return
     setStatus('Eliminando publicación…')
     try {
-      const response = await fetch(`${apiBaseUrl}/posts/${pendingDeletePost}`, {
+      const isAdmin = currentUser?.role === 'admin'
+      const url = `${apiBaseUrl}/posts/${pendingDeletePost}`
+      const body = isAdmin
+        ? JSON.stringify({ admin_email: currentUser.email })
+        : JSON.stringify({ user_email: currentUser.email })
+      
+      const response = await fetch(url, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_email: currentUser.email }),
+        body: body,
       })
       const data = await response.json()
       if (!response.ok) {
@@ -6403,31 +7594,33 @@ function CommunityPage({ currentUser, ensureAuth }) {
                     {imageFile ? imageFile.name : 'Seleccionar imagen'}
                   </span>
                 </label>
-                {imageFile && (
-                  <>
-                    {sharedRoutineModal && (
-                      <button
-                        type="button"
-                        onClick={() => setSharedRoutineModal(sharedRoutineModal)}
-                        style={{
-                          padding: '8px 16px',
-                          background: '#fbbf24',
-                          color: '#000',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          marginRight: '8px'
-                        }}
-                      >
-                        Ver rutina completa ({sharedRoutineModal.exercises?.length || 0} ejercicios)
-                      </button>
-                    )}
+                {imageFile && (() => {
+                  // Buscar si hay una rutina compartida para esta imagen en el composer
+                  let routineInComposer = null
+                  try {
+                    const imageName = imageFile.name
+                    const routineData = localStorage.getItem(`sharedRoutine_${imageName}`)
+                    if (routineData) {
+                      routineInComposer = JSON.parse(routineData)
+                    }
+                  } catch (e) {
+                    console.error('Error al cargar rutina compartida:', e)
+                  }
+                  
+                  return (
+                    <>
                     <button
                       type="button"
                       onClick={() => {
                         setImageFile(null)
+                        // Limpiar también la rutina compartida del localStorage
+                        try {
+                          if (imageFile.name) {
+                            localStorage.removeItem(`sharedRoutine_${imageFile.name}`)
+                          }
+                        } catch (e) {
+                          console.error('Error al limpiar rutina compartida:', e)
+                        }
                         setSharedRoutineModal(null)
                         const fileInput = document.querySelector('input[type="file"]')
                         if (fileInput) fileInput.value = ''
@@ -6451,8 +7644,9 @@ function CommunityPage({ currentUser, ensureAuth }) {
                     >
                       ×
                     </button>
-                  </>
-                )}
+                    </>
+                  )
+                })()}
               </div>
               <div className="community__composer-actions">
                 {status && <span className={`community__status ${status.toLowerCase().includes('error') ? 'error' : ''}`}>{replaceEmojisWithIcons(status)}</span>}
@@ -6479,11 +7673,34 @@ function CommunityPage({ currentUser, ensureAuth }) {
                       {!post.user_profile_photo && (post.user_name?.charAt(0).toUpperCase() ?? 'A')}
                     </div>
                     <div className="community-post__user-info">
-                      <strong
-                        onClick={() => navigate(`/perfil?user=${encodeURIComponent(post.user_email)}`)}
-                      >
-                        {post.user_name}
-                      </strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong
+                          onClick={() => navigate(`/perfil?user=${encodeURIComponent(post.user_email)}`)}
+                        >
+                          {post.user_name}
+                        </strong>
+                        {post.user_role === 'trainer' && (
+                          <span 
+                            className="trainer-badge"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '4px 8px',
+                              background: 'rgba(59, 130, 246, 0.2)',
+                              border: '1px solid #3b82f6',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              color: '#3b82f6',
+                            }}
+                            title="Entrenador certificado"
+                          >
+                            <span className="material-icons" style={{ fontSize: '16px' }}>verified</span>
+                            <span>Entrenador</span>
+                          </span>
+                        )}
+                      </div>
                       <small>{post.user_email}</small>
                     </div>
                     <div className="community-post__meta">
@@ -6496,11 +7713,12 @@ function CommunityPage({ currentUser, ensureAuth }) {
                           minute: '2-digit'
                         }) : ''}
                       </span>
-                      {currentUser?.email === post.user_email && (
+                      {(currentUser?.email === post.user_email || currentUser?.role === 'admin') && (
                         <button
                           type="button"
                           className="community-post__delete"
                           onClick={() => handleAskDeletePost(post.id)}
+                          title={currentUser?.role === 'admin' ? 'Eliminar como administrador' : 'Eliminar publicación'}
                         >
                           Eliminar
                         </button>
@@ -6512,19 +7730,6 @@ function CommunityPage({ currentUser, ensureAuth }) {
                     const fullImageUrl = post.image_url.startsWith('http')
                       ? post.image_url
                       : `${backendBaseUrl}${post.image_url}`
-                    // Buscar si hay una rutina compartida para esta imagen
-                    const imageName = post.image_url.split('/').pop() || ''
-                    let sharedRoutine = null
-                    try {
-                      const routineByUrl = localStorage.getItem(`sharedRoutine_${fullImageUrl}`)
-                      const routineByName = imageName ? localStorage.getItem(`sharedRoutine_${imageName}`) : null
-                      const routineData = routineByUrl || routineByName
-                      if (routineData) {
-                        sharedRoutine = JSON.parse(routineData)
-                      }
-                    } catch (e) {
-                      console.error('Error al cargar rutina compartida:', e)
-                    }
                     
                     return (
                       <div className="community-post__image">
@@ -6532,41 +7737,6 @@ function CommunityPage({ currentUser, ensureAuth }) {
                           src={fullImageUrl}
                           alt="Publicación de la comunidad"
                         />
-                        {sharedRoutine && sharedRoutine.exercises && sharedRoutine.exercises.length > 3 && (
-                          <div style={{ 
-                            padding: '12px', 
-                            textAlign: 'center',
-                            borderTop: '1px solid rgba(251, 191, 36, 0.2)',
-                            background: 'rgba(26, 32, 44, 0.5)'
-                          }}>
-                            <button
-                              type="button"
-                              onClick={() => setSharedRoutineModal(sharedRoutine)}
-                              style={{
-                                padding: '8px 16px',
-                                background: 'transparent',
-                                color: '#fbbf24',
-                                border: '1px solid #fbbf24',
-                                borderRadius: '6px',
-                                fontSize: '14px',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                textDecoration: 'none',
-                                transition: 'all 0.2s ease'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.background = '#fbbf24'
-                                e.target.style.color = '#000'
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.background = 'transparent'
-                                e.target.style.color = '#fbbf24'
-                              }}
-                            >
-                              Ver rutina completa ({sharedRoutine.exercises.length} ejercicios) →
-                            </button>
-                          </div>
-                        )}
                       </div>
                     )
                   })()}
@@ -6659,11 +7829,12 @@ function CommunityPage({ currentUser, ensureAuth }) {
                                         Responder
                                       </button>
                                     )}
-                                    {currentUser?.email === comment.user_email && (
+                                    {(currentUser?.email === comment.user_email || currentUser?.role === 'admin') && (
                                       <button
                                         type="button"
                                         className="community-post__comment-delete"
                                         onClick={() => handleDeleteComment(post.id, comment.id)}
+                                        title={currentUser?.role === 'admin' ? 'Eliminar como administrador' : 'Eliminar comentario'}
                                       >
                                         Eliminar
                                       </button>
@@ -6738,11 +7909,12 @@ function CommunityPage({ currentUser, ensureAuth }) {
                                               <span className="heart">❤️</span>
                                               <span>{reply.likes_count || 0}</span>
                                             </button>
-                                            {currentUser?.email === reply.user_email && (
+                                            {(currentUser?.email === reply.user_email || currentUser?.role === 'admin') && (
                                               <button
                                                 type="button"
                                                 className="community-post__comment-delete"
                                                 onClick={() => handleDeleteComment(post.id, reply.id)}
+                                                title={currentUser?.role === 'admin' ? 'Eliminar como administrador' : 'Eliminar respuesta'}
                                               >
                                                 Eliminar
                                               </button>
@@ -6926,6 +8098,36 @@ function CommunityPage({ currentUser, ensureAuth }) {
                 </div>
               )}
             </div>
+            
+            {currentUser && sharedRoutineModal && sharedRoutineModal.exercises && sharedRoutineModal.exercises.length > 0 && (
+              <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleCopySharedRoutine(sharedRoutineModal)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>content_copy</span>
+                  Copiar rutina
+                </button>
+                {copyRoutineStatus && (
+                  <p style={{ 
+                    marginTop: '12px', 
+                    textAlign: 'center', 
+                    color: copyRoutineStatus.includes('exitosamente') ? '#4ade80' : '#ef4444',
+                    fontSize: '14px'
+                  }}>
+                    {copyRoutineStatus}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>,
         document.body

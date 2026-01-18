@@ -517,21 +517,74 @@ form > select {
     padding: 12px 0;
   }
 
+  .site-nav .container-xl {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+    position: relative;
+  }
+
   .site-nav__grid {
-    grid-template-columns: 1fr auto;
-    gap: 10px;
+    display: contents;
+  }
+
+  .navbar-toggler.custom-toggler {
+    flex-shrink: 0;
+    order: 1;
   }
 
   .site-nav__brand {
-    justify-self: start;
+    flex: 1;
+    text-align: center;
+    order: 2;
+    position: static;
+    transform: none;
   }
 
   .site-nav__brand.logo {
     font-size: 1.15rem;
   }
 
+  .site-nav__right {
+    flex-shrink: 0;
+    order: 3;
+  }
+
   .site-nav__left.navbar-collapse {
-    grid-column: 1 / -1;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin-top: 12px;
+    z-index: 1000;
+    order: 4;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.95) 0%, rgba(245, 158, 11, 0.90) 100%);
+    padding: 16px;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .site-nav__left.navbar-collapse.show {
+    display: block;
+  }
+
+  .site-nav__left.navbar-collapse .navbar-nav .nav-link {
+    background: rgba(0, 0, 0, 0.1);
+    color: #000000;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: block;
+    text-align: left;
+  }
+
+  .site-nav__left.navbar-collapse .navbar-nav .nav-link:hover {
+    background: rgba(0, 0, 0, 0.15);
+    color: #000000;
   }
 }
 
@@ -543,6 +596,14 @@ form > select {
   padding-right: 20px;
   width: 100%;
   max-width: 100%;
+  position: relative;
+}
+
+@media (max-width: 992px) {
+  .site-nav .container-xl {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
 }
 
 @media (min-width: 1200px) {
@@ -7606,4 +7667,429 @@ main {
   background: #FAFAFA;
   flex: 1;
   overflow-y: auto;
+}
+
+/* ========================================
+   MEDIA QUERIES PARA MÓVILES (max-width: 768px)
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Hero Section */
+  .hero {
+    padding: 80px 20px 100px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+    margin-bottom: 24px;
+  }
+
+  .lead {
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .hero__actions .btn-lg,
+  .hero-actions .btn-lg {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+
+  /* Navigation */
+  .site-nav .container-xl {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .navbar-nav {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .navbar-nav .nav-link {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  .header-cta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-cta .btn {
+    width: 100%;
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  /* Routines Page - Header */
+  .routine-editor-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .routine-editor-header h2 {
+    font-size: 24px;
+  }
+
+  .routines-view-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .routines-view-header h2 {
+    font-size: 24px;
+  }
+
+  /* Routines Page - Grids */
+  .routines-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .routine-view-card {
+    padding: 20px;
+  }
+
+  .routine-view-card-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding-right: 40px;
+  }
+
+  .routine-view-card-title-section h3 {
+    font-size: 20px;
+  }
+
+  .routine-view-card-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .routine-view-card-actions .btn {
+    width: 100%;
+  }
+
+  /* Routines Editor */
+  .routine-editor-main {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .routine-days-section,
+  .routine-activities-section {
+    padding: 20px;
+  }
+
+  .routine-days-header h3,
+  .routine-activities-header h3 {
+    font-size: 20px;
+  }
+
+  /* Programs Hub */
+  .programs-hub-full__header {
+    padding: 24px 20px 20px;
+  }
+
+  .programs-hub-full__header-content h2 {
+    font-size: 24px;
+  }
+
+  .programs-hub-full__content {
+    padding: 24px 20px;
+  }
+
+  .programs-hub__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* Progress Page */
+  .progress-stats {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .progress-chart-container {
+    padding: 16px;
+  }
+
+  .progress-filters {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Community Page */
+  .community-hero {
+    padding: 40px 20px;
+  }
+
+  .community-hero .section__header h2 {
+    font-size: 24px;
+  }
+
+  .community-post {
+    padding: 20px;
+  }
+
+  .community-post header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .community-post__content {
+    font-size: 15px;
+  }
+
+  .community-post__actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .community-post__actions button {
+    width: 100%;
+  }
+
+  /* Profile Page */
+  .profile-container {
+    padding: 20px 16px 40px;
+  }
+
+  .profile-summary {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+  }
+
+  .profile-summary__top {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .profile-summary__top h2 {
+    font-size: 24px;
+  }
+
+  .profile-summary__actions {
+    justify-content: center;
+  }
+
+  /* Admin Accounts Page */
+  .admin-accounts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-account-card {
+    padding: 16px;
+  }
+
+  /* Trainer Page */
+  .trainer-clients-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trainer-client-card {
+    padding: 16px;
+  }
+
+  /* Modals */
+  .auth-modal__content {
+    margin: 20px;
+    padding: 24px 20px;
+    max-width: calc(100% - 40px);
+  }
+
+  .auth-modal__header h3 {
+    font-size: 22px;
+  }
+
+  .comments-modal__content {
+    margin: 20px;
+    max-width: calc(100% - 40px);
+  }
+
+  .comments-modal__post {
+    padding: 16px;
+  }
+
+  .comments-modal__comments {
+    padding: 16px;
+  }
+
+  /* Chatbot */
+  .chatbot-window {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .chatbot-window__messages {
+    padding: 16px;
+  }
+
+  .chatbot-window__input {
+    padding: 12px 16px;
+  }
+
+  .chatbot-window__input input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  /* Forms */
+  .auth-single label {
+    font-size: 14px;
+  }
+
+  .auth-single input {
+    font-size: 15px;
+    padding: 12px 16px;
+  }
+
+  /* Buttons */
+  .btn-primary,
+  .btn-outline {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+
+  .btn-secondary {
+    padding: 10px 20px;
+    font-size: 15px;
+  }
+
+  /* Tabs */
+  .routines-tabs {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .routines-tab {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+
+  /* Cards */
+  .metric-card {
+    padding: 24px 20px;
+  }
+
+  .panel-card {
+    padding: 20px;
+  }
+
+  /* Why AngaX Section */
+  .why-angax__feature {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .why-angax__image {
+    height: 300px;
+    order: -1;
+  }
+
+  .why-angax__content h3 {
+    font-size: 24px;
+  }
+
+  .why-angax__content p {
+    font-size: 16px;
+  }
+
+  /* Footer */
+  .footer__links {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  /* General */
+  .container-xl {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 24px;
+  }
+
+  h3 {
+    font-size: 20px;
+  }
+
+  /* Tables */
+  .progress-table {
+    font-size: 14px;
+  }
+
+  .progress-table th,
+  .progress-table td {
+    padding: 8px 12px;
+  }
+}
+
+/* Media queries para tablets (max-width: 992px) */
+@media (max-width: 992px) {
+  .routines-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+
+  .progress-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Media queries para pantallas muy pequeñas (max-width: 480px) */
+@media (max-width: 480px) {
+  .hero {
+    padding: 60px 16px 80px;
+  }
+
+  .hero-title {
+    font-size: 1.75rem;
+  }
+
+  .routine-view-card-title-section h3 {
+    font-size: 18px;
+  }
+
+  .routine-editor-header h2,
+  .routines-view-header h2 {
+    font-size: 20px;
+  }
+
+  .community-hero .section__header h2 {
+    font-size: 20px;
+  }
+
+  .profile-summary__top h2 {
+    font-size: 20px;
+  }
+
+  .auth-modal__header h3 {
+    font-size: 20px;
+  }
+
+  .btn-primary,
+  .btn-outline,
+  .btn-secondary {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
 }

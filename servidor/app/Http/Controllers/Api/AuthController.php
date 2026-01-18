@@ -46,10 +46,10 @@ class AuthController extends Controller
                 'name' => 'required|string|max:100',
                 'email' => 'required|string|email|max:100|unique:users',
                 'password' => 'required|string|min:6|confirmed',
-                'role' => 'required|in:user,trainer',
+                'role' => 'required|in:user,trainer,admin',
             ]);
 
-            // Asegurarse de que el role sea válido
+            // Asegurarse de que el role sea válido (admin no se puede crear desde registro)
             $role = in_array($request->role, ['user', 'trainer']) ? $request->role : 'user';
             
             // Preparar fecha en formato simple para SQLite
